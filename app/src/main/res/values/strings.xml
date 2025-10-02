@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">TFT Guide Assistant</string>
+    <string name="start_capture">Start guide overlay</string>
+    <string name="stop_capture">Stop guide overlay</string>
+    <string name="capture_permission_denied">Screen capture permission denied</string>
+    <string name="media_projection_unavailable">Media projection not available on this device</string>
+</resources>

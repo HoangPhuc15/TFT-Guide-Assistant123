@@ -10,7 +10,20 @@ Don't forget that new patchs will be added right after their release on Riot Gam
 ## Important note about this repository
 Starting patch 13.12 of _League of Legends_, this repository will not be updated anymore. This can be explained by the _League of Legends_ _Data Dragon_, which includes all data from _Teamfight Tactics_ for many patchs now. If you want to use old data from _Teamfight Tactics_, you can still use this repository. Starting set 9, you will need to use the [_Data Dragon_ repository for _League of Legends_](https://github.com/InFinity54/LoL_DDragon).
 
+### Community update
+
+To make experimentation easier for the TFT in-game assistant prototype, folders for set 9 and set 9.5 have been prepared under `previous/set9` and `previous/set9update`. The JSON files are no longer committed—run the helper script to pull the latest payloads from Riot's CDN:
+
+```bash
+python tools/fetch_tft_data.py              # sync both set9 and set9update
+python tools/fetch_tft_data.py --sets set9  # sync just set 9
+```
+
+`fetch_tft_data.py` downloads the JSON payloads (`tft-champions.json`, `tft-items.json`, `tft-traits.json`, `tft-augments.json`) using the same folder structure as older sets. The script disables any proxy configuration automatically; if you are running in an environment without outbound Internet access, copy the files in manually instead.
+
 Note that all additional contents from this repository has been included in additional content of the _League of Legends_ _Data Dragon_ repository.
+
+If you want to compile and install the Android prototype (`app/`) on a physical phone or tablet, follow the step-by-step checklist in [`docs/RUN_ON_DEVICE.md`](docs/RUN_ON_DEVICE.md).
 
 ## Additional contents in this repository
 This repository contains some additional files, not included in Data Dragon :
@@ -27,6 +40,8 @@ Because of the presence of all previous sets (which can still be downloaded from
 ## Sets available to this repository
 The date in front of each set represents the date when the set was pushed to this repository, not the date when it was released by Riot Games. Here's a list of all sets included in this repository :
 
+- (September 12th, 2023) Set 9 (update) : Horizonbound [from [_League of Legends_ _Data Dragon_'s repository](https://github.com/InFinity54/LoL_DDragon)]
+- (July 19th, 2023) Set 9 : Runeterra Reforged [from [_League of Legends_ _Data Dragon_'s repository](https://github.com/InFinity54/LoL_DDragon)]
 - (March 21st, 2023) Set 8 (update) : Monsters Attack - Glitched Out [from [_League of Legends_ _Data Dragon_'s repository](https://github.com/InFinity54/LoL_DDragon)]
 - (January 11th, 2023) Set 8 : Monsters Attack [from [_League of Legends_ _Data Dragon_'s repository](https://github.com/InFinity54/LoL_DDragon)]
 - (July 17th, 2022) Set 7 : Dragonlands [from [CDragon](https://raw.communitydragon.org/latest/cdragon/tft/) and official game files - not yet released by _Riot Games_]
