@@ -1,0 +1,14 @@
+[
+  {
+    "id": "GuinsoosRageblade",
+    "build": ["RecurveBow", "NeedlesslyLargeRod"],
+    "stat": {"attackSpeed": 0.25, "abilityPower": 30},
+    "bestFor": ["carry_ranged", "onhit"]
+  },
+  {
+    "id": "TitanResolve",
+    "build": ["RecurveBow", "ChainVest"],
+    "stat": {"armor": 20, "attackDamage": 25},
+    "bestFor": ["bruiser", "frontline"]
+  }
+]

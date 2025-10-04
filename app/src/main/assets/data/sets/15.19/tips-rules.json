@@ -1,0 +1,39 @@
+{
+  "meta": {"patch": "15.19.1", "language": "vi_VN"},
+  "states": [
+    {
+      "id": "STAGE_PLANNING_LOW_GOLD",
+      "match": {
+        "screen": "PLANNING",
+        "gold": {"lt": 20},
+        "benchUnits": {"gte": 6}
+      },
+      "tips": [
+        "Bán tướng 1 vàng dư để lên 20 vàng ở 2-2.",
+        "Giữ Ashe/Aphelios nếu đang theo Fated Sniper."
+      ]
+    },
+    {
+      "id": "CAROUSEL_TAKE_BOW",
+      "match": {
+        "screen": "CAROUSEL",
+        "needItem": "RecurveBow",
+        "carry": "Ashe"
+      },
+      "tips": [
+        "Ưu tiên Cung để ghép Guinsoo cho Ashe."
+      ]
+    },
+    {
+      "id": "COMBAT_POSITIONING_SNIPER",
+      "match": {
+        "screen": "COMBAT",
+        "haveTrait": "Sniper",
+        "enemyThreat": "Assassin"
+      },
+      "tips": [
+        "Kéo carry vào góc có tanker che chắn sát thủ."
+      ]
+    }
+  ]
+}

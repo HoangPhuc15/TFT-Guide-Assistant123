@@ -1,0 +1,30 @@
+[
+  {
+    "id": "Ashe",
+    "cost": 2,
+    "traits": ["Fated", "Sniper"],
+    "ability": {
+      "name": "Volley",
+      "desc": "Bắn một loạt tên gây sát thương phép.",
+      "scaling": {"ap": 0.8}
+    },
+    "synergyTips": [
+      "Ghép cùng Xayah hoặc Aphelios để lấy mốc Sniper.",
+      "Tăng tốc đánh bằng Guinsoo giúp Ashe gây sát thương ổn định."
+    ]
+  },
+  {
+    "id": "Sett",
+    "cost": 4,
+    "traits": ["Dragon", "Warrior"],
+    "ability": {
+      "name": "Haymaker",
+      "desc": "Tích tụ sát thương nhận vào và tung cú đấm cực mạnh.",
+      "scaling": {"hp": 0.25}
+    },
+    "synergyTips": [
+      "Đặt Sett ở giữa để nhận sát thương từ nhiều mục tiêu.",
+      "Cần trang bị chống chịu và hồi phục để phát huy tối đa."
+    ]
+  }
+]

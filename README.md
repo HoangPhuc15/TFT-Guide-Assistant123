@@ -1,59 +1,76 @@
-# _Teamfight Tactics_ - Data Dragon
+# TFT Bubbles Assistant Starter
 
-Do you want to use DDragon for an another game from _Riot Games_? Check the [_Data Dragon_ repository for _League of Legends_](https://github.com/InFinity54/LoL_DDragon), [for _Legends of Runeterra_](https://github.com/InFinity54/LoR_DDragon) or the [_Valorant_ one](https://github.com/InFinity54/Valorant_DDragon).
+This starter repository packages three pieces you can copy straight into a new GitHub project:
 
-## Introduction
-_Data Dragon_ is a package of files you can use for your projects about [_Teamfight Tactics_](https://teamfighttactics.leagueoflegends.com), distributed by Riot Games. A new version of Data Dragon is released some days after each new set release. This repository allows you to update automatically all files more easily.
+1. **Android bubble overlay prototype** (`app/`) – Kotlin sources targeting Android 15 with a `BubbleActivity`, a foreground `ScreenCaptureService`, and a lightweight notification helper that surfaces strategy tips in a system bubble.
+2. **TFT dataset + auto-sync** (`data/sets/15.19/`) – a trimmed patch 15.19 sample (champions, items, traits, augments, and JSON rules) that the prototype ships as assets and refreshes from the network at runtime.
+3. **Documentation** – this README plus the in-app comments call out where to plug in real OCR/computer-vision, richer datasets, or an online sync service.
 
-Don't forget that new patchs will be added right after their release on Riot Games' Developers website, but it takes often many days to come.
+The goal is to give you a reproducible baseline: unzip or clone, open in Android Studio, click *Build ▸ Make Project*, and you get a runnable APK that pops a conversation bubble with hard-coded tips. From there you can iterate on the computer-vision pipeline, expand the rules engine, or swap in live data hosting.
 
-## Important note about this repository
-Starting patch 13.12 of _League of Legends_, this repository will not be updated anymore. This can be explained by the _League of Legends_ _Data Dragon_, which includes all data from _Teamfight Tactics_ for many patchs now. If you want to use old data from _Teamfight Tactics_, you can still use this repository. Starting set 9, you will need to use the [_Data Dragon_ repository for _League of Legends_](https://github.com/InFinity54/LoL_DDragon).
+## Project layout
 
-Note that all additional contents from this repository has been included in additional content of the _League of Legends_ _Data Dragon_ repository.
+```
+tft-bubbles-assistant/
+├─ app/
+│  ├─ src/main/java/com/example/tft/
+│  │  ├─ ui/BubbleActivity.kt              # Hosts the compact bubble UI
+│  │  ├─ notif/BubbleNotifier.kt           # Builds notification + bubble metadata
+│  │  ├─ data/TftRepository.kt             # Loads JSON from disk (network cache → assets fallback)
+│  │  ├─ data/DataSyncer.kt               # Background job that pulls Data Dragon + tips
+│  │  ├─ vision/ScreenAnalyzer.kt          # Heuristic screen-state placeholder
+│  │  ├─ rules/TipEngine.kt, TipSession.kt # Matches states to rule tips
+│  │  └─ service/ScreenCaptureService.kt   # Foreground MediaProjection stub
+│  ├─ src/main/assets/data/sets/15.19/     # Copied into the APK for offline reads
+│  ├─ src/main/res/layout/activity_bubble.xml
+│  └─ src/main/AndroidManifest.xml
+├─ data/sets/15.19/                        # Same JSON payloads for external hosting
+└─ tools/                                   # Existing utility scripts (unchanged)
+```
 
-## Additional contents in this repository
-This repository contains some additional files, not included in Data Dragon :
+The `data/` directory at the repo root mirrors the assets bundled into the APK so you can:
 
-- Icons of all turbo badges (used for _Hyper Roll_ game mode)
-- Icons of all _Double Up_ badges (used for _Double Up_ game mode)
+- host them separately (for example on GitHub Pages) and fetch at runtime, or
+- track balance changes in git before deciding whether to ship the updated assets.
 
-## Unused contents in this repository
-Because of the presence of all previous sets (which can still be downloaded from Riot Games servers), some contents which became unused in _Teamfight Tactics_ are available in this repository. This content can be some deleted elements, or old versions of actual stuff. In the repository, you will find :
+## Build the APK
 
-- All previous sets of the game, since set 2.
-- All previous mid-sets of the game (called "sets update" in this repository) for sets 3 to 5 included.
+1. **Sync the repo** – clone or copy this starter, then ensure `app/src/main/assets/data/sets/15.19/` is present (already included).
+2. **Open in Android Studio** – Hedgehog (2023.1.1) or newer with Android Gradle Plugin 8.2+ and JDK 17. Narwhal 2024.1 works out of the box too.
+3. **Run/Build** – `Build ▸ Make Project` or `./gradlew assembleDebug`. Install the resulting `app-debug.apk` via Studio, `adb`, or the device file manager.
+4. **Grant permissions** – on first launch the prototype asks for overlay (bubble) and screen-capture consent. The capture flow is stubbed but the permissions wiring is ready.
 
-## Sets available to this repository
-The date in front of each set represents the date when the set was pushed to this repository, not the date when it was released by Riot Games. Here's a list of all sets included in this repository :
+The app boots even when the device is offline. When a network connection is available it downloads the latest JSON into `files/data/sets/live/` and transparently switches the repository to that cache.
 
-- (March 21st, 2023) Set 8 (update) : Monsters Attack - Glitched Out [from [_League of Legends_ _Data Dragon_'s repository](https://github.com/InFinity54/LoL_DDragon)]
-- (January 11th, 2023) Set 8 : Monsters Attack [from [_League of Legends_ _Data Dragon_'s repository](https://github.com/InFinity54/LoL_DDragon)]
-- (July 17th, 2022) Set 7 : Dragonlands [from [CDragon](https://raw.communitydragon.org/latest/cdragon/tft/) and official game files - not yet released by _Riot Games_]
-- (February 10th, 2022) Set 6 : Gizmos & Gadgets [partially, from [CDragon](https://raw.communitydragon.org/latest/cdragon/tft/) and [Set 6 Promo Assets Page](https://spark.adobe.com/page/ficXgtBZ0f3xd/) - not yet released by _Riot Games_]
-- (August 1st, 2021) Set 5 (update) : Reckoning - Dawn of Heroes
-- (May 1th, 2021) Set 5 : Reckoning
-- (January 21th, 2021) Set 4 (update) : Fates - Festival of Beasts
-- (December 9th, 2020) Set 4 : Fates
-- (December 9th, 2020) Set 3 (update) : Galaxies - Return to the Stars
-- (December 9th, 2020) Set 3 : Galaxies
-- (December 9th, 2020) Set 2 : Rise of the Elements
+## Configure automatic data refresh
 
-## Note about Sets 6 and 7
-Set 6 has been added with some assets available on the [Set 6 Promo Assets Page](https://express.adobe.com/page/ficXgtBZ0f3xd/) (published by _Riot Games_) or/and on [_CommunityDragon_](https://raw.communitydragon.org/latest/cdragon/tft/). Set 7 used the same process, but only with _CommunityDragon_.
+`DataSyncer` runs on every app start (via `androidx.startup`) and attempts to update five files:
 
-This was needed because _Riot Games_ didn't release at all an official version of _Data Dragon_ for these sets of _Teamfight Tactics_. Keep in mind that they are partially complete, and it can contains some mistakes. Feel free to help me to improve these sets if you can (issues are open if you want to)!
+| Type       | Source | Default endpoint |
+| ---------- | ------ | ---------------- |
+| Champions  | Riot Data Dragon | `https://ddragon.leagueoflegends.com/cdn/<ddragonVersion>/data/en_US/tft-champions.json` |
+| Items      | Riot Data Dragon | `…/tft-items.json` |
+| Traits     | Riot Data Dragon | `…/tft-traits.json` |
+| Augments   | Riot Data Dragon | `…/tft-augments.json` |
+| Tips rules | Custom | `tipsRulesUrl` (left blank by default) |
 
-Due to what I said just above, keep in mind that `items.json`, `champions.json` and `traits.json` files can contains some elements from previous sets, which are not used anymore. Some items pictures can be missing or incorrect too.
+Two Gradle properties control these endpoints and compile into `BuildConfig`:
 
-There is also some differences between official _Data Dragon_ files and the temporary reconstructed folder:
-- In `traits.json`, `type` doesn't exist.
-- In `traits.json`, `style` (in `sets` array) is a number (like 1), and not a string (like `silver`).
-- In `traits.json`, the `description` contains some variables strings (like `@Duration@`), which are not included.
-- In `items.json`, the `description` contains some variables strings (like `@Duration@`), which are not included.
-- In `items.json`, `isElusive` and `isRadiant` doesn't exists.
+```properties
+# gradle.properties
+ddragonVersion=15.19.1      # Use the patch you want Narwhal/Gradle to fetch.
+tipsRulesUrl=https://raw.githubusercontent.com/<you>/tft-data/main/tips-rules.json
+```
 
-Sets 6 and 7 have been recreated, but their corresponding mid-sets will not be available in this repository. Data about these two sets will be replaced by the official _Data Dragon_ data, if _Riot Games_ finally release it one day.
+Leave `tipsRulesUrl` empty to keep using the bundled offline rules. When you point it to a hosted JSON file, `DataSyncer` caches the download and the `TipEngine` will immediately read the updated strategy list. Failures (for example 404s or timeouts) are logged but never crash the app; the repository falls back to the asset copy so you can always reach the bubble UI.
 
-## Note about repository's updates for set 8
-Since patch 13.1 of _League of Legends_, files of _Teamfight Tactics_ seems to be added to the [_Data Dragon_'s files of _League of Legends_](https://github.com/InFinity54/LoL_DDragon). Due to this change, all JSON files of this repository will have a different structure, starting with set 8.
+## Extending the starter
+
+- **Vision** – replace `ScreenAnalyzer`’s color heuristic with ML Kit Text Recognition + template matching, or feed frames to a server model. It currently emits a static `TipState` so the rest of the pipeline can be exercised without real OCR.
+- **Rules** – edit `data/sets/15.19/tips-rules.json` to describe new matchers. The `TipEngine` supports string equality and basic numeric comparisons; extend it with fuzzy matching or trait lookups as needed.
+- **Data hosting** – publish the `data/` folder to a CDN and update `tipsRulesUrl` so the built-in sync job writes into `context.filesDir` before you call `TftRepository`.
+- **Reports** – persist the `TipSession` objects produced by `TipEngine.evaluate` and export them as Markdown or JSON for after-action reviews.
+
+## License
+
+The underlying Data Dragon content remains © Riot Games. Kotlin sources in this starter follow the original repository’s Apache 2.0 license.

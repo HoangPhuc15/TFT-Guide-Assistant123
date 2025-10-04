@@ -1,0 +1,18 @@
+[
+  {
+    "id": "Fated",
+    "innate": "Mỗi combat ghép 2 tướng định mệnh để nhận chỉ số bonus.",
+    "tiers": [
+      {"min": 2, "bonus": "+15% sát thương"},
+      {"min": 4, "bonus": "+20% sát thương, +10% tốc đánh"}
+    ]
+  },
+  {
+    "id": "Sniper",
+    "innate": "Tướng bắn xa gây thêm sát thương theo khoảng cách.",
+    "tiers": [
+      {"min": 2, "bonus": "+12% sát thương"},
+      {"min": 4, "bonus": "+20% sát thương"}
+    ]
+  }
+]

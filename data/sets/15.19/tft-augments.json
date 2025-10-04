@@ -1,0 +1,16 @@
+[
+  {
+    "id": "SniperEmblem",
+    "tier": 2,
+    "effect": "Nhận 1 ấn Sniper và 1 Aphelios.",
+    "synergy": ["Sniper", "Fated"],
+    "usage": "Khi bạn đã có Ashe carry nhưng thiếu mốc Sniper 4."
+  },
+  {
+    "id": "Improvise",
+    "tier": 1,
+    "effect": "Trang bị tạm thời vào đầu mỗi round.",
+    "synergy": ["flex"],
+    "usage": "Dùng cho đội hình reroll cần nhiều item nhỏ."
+  }
+]

@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">TFT Bubbles Assistant</string>
+    <string name="channel_name">TFT Assistant Chat</string>
+    <string name="channel_description">Thông báo bong bóng hướng dẫn TFT</string>
+    <string name="notification_title">Trợ lý TFT</string>
+    <string name="notification_placeholder">Không có gợi ý</string>
+    <string name="action_start_capture">Bắt đầu chụp màn hình</string>
+    <string name="action_stop_capture">Dừng trợ lý</string>
+</resources>
