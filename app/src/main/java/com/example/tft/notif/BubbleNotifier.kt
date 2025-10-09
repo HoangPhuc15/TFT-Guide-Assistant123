@@ -10,19 +10,26 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.Person
 import com.example.tft.R
+import com.example.tft.rules.TipEntry
+import com.example.tft.rules.TipSession
 import com.example.tft.ui.BubbleActivity
 
 object BubbleNotifier {
     private const val CHANNEL_ID = "tft_bubble_chat"
 
-    fun post(context: Context, conversationId: String, tips: List<String>) {
+    fun post(context: Context, session: TipSession, patch: String) {
+        val conversationId = buildConversationId(session)
+        val tipPayload = ArrayList<TipEntry>(session.entries)
+        val summary = session.state.summary()
         ensureChannel(context)
         val contentIntent = PendingIntent.getActivity(
             context,
             conversationId.hashCode(),
             Intent(context, BubbleActivity::class.java)
-                .putStringArrayListExtra(BubbleActivity.EXTRA_TIPS, ArrayList(tips))
-                .putExtra(BubbleActivity.EXTRA_CONVERSATION_ID, conversationId),
+                .putParcelableArrayListExtra(BubbleActivity.EXTRA_TIP_ENTRIES, tipPayload)
+                .putExtra(BubbleActivity.EXTRA_CONVERSATION_ID, conversationId)
+                .putExtra(BubbleActivity.EXTRA_SUMMARY, summary)
+                .putExtra(BubbleActivity.EXTRA_PATCH, patch),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -30,10 +37,10 @@ object BubbleNotifier {
             .setName(context.getString(R.string.notification_title))
             .build()
 
-        val style = NotificationCompat.MessagingStyle(person).apply {
-            val first = tips.firstOrNull() ?: context.getString(R.string.notification_placeholder)
-            addMessage(first, System.currentTimeMillis(), person)
-        }
+        val displayLines = session.displayLines(limit = 3)
+        val firstLine = displayLines.firstOrNull() ?: context.getString(R.string.notification_placeholder)
+        val style = NotificationCompat.MessagingStyle(person)
+            .addMessage(firstLine, System.currentTimeMillis(), person)
 
         val bubble = NotificationCompat.BubbleMetadata.Builder()
             .setDesiredHeight(600)
@@ -44,7 +51,7 @@ object BubbleNotifier {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_tip)
             .setContentTitle(context.getString(R.string.notification_title))
-            .setContentText(tips.firstOrNull() ?: context.getString(R.string.notification_placeholder))
+            .setContentText(firstLine)
             .setStyle(style)
             .setShortcutId(conversationId)
             .setBubbleMetadata(bubble)
@@ -54,6 +61,15 @@ object BubbleNotifier {
             .build()
 
         NotificationManagerCompat.from(context).notify(conversationId.hashCode(), notification)
+    }
+
+    private fun buildConversationId(session: TipSession): String {
+        val timestamp = session.state.metadata.optLong("timestamp", System.currentTimeMillis())
+        return listOf(
+            session.state.screen,
+            session.state.stage.toString(),
+            timestamp.toString()
+        ).joinToString(":")
     }
 
     private fun ensureChannel(context: Context) {

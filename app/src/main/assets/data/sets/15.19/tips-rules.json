@@ -1,38 +1,162 @@
 {
   "meta": {"patch": "15.19.1", "language": "vi_VN"},
-  "states": [
+  "rules": [
     {
-      "id": "STAGE_PLANNING_LOW_GOLD",
+      "id": "stage_2_1_level",
       "match": {
         "screen": "PLANNING",
-        "gold": {"lt": 20},
-        "benchUnits": {"gte": 6}
+        "stage": {"eq": "2-1"}
       },
       "tips": [
-        "Bán tướng 1 vàng dư để lên 20 vàng ở 2-2.",
-        "Giữ Ashe/Aphelios nếu đang theo Fated Sniper."
+        {
+          "category": "LEVELING",
+          "priority": 100,
+          "text": "Lên cấp 4 ngay ở 2-1 để giữ chuỗi thắng với Sett + Ashe.",
+          "requiresTrait": "FATED"
+        },
+        {
+          "category": "ECONOMY",
+          "priority": 80,
+          "text": "Sau khi roll, giữ ít nhất 10 vàng để bắt đầu tích lãi.",
+          "requiresDeviation": "LOW_INTEREST"
+        }
+      ],
+      "correctives": [
+        {
+          "category": "ALERT",
+          "priority": 120,
+          "text": "Bạn dưới 10 vàng ở 2-1, bán tướng 1 vàng dư như Sett/Wukong thay thế.",
+          "requiresDeviation": "ECON_BEHIND"
+        }
       ]
     },
     {
-      "id": "CAROUSEL_TAKE_BOW",
+      "id": "stage_3_2_level6",
+      "match": {
+        "screen": "PLANNING",
+        "stage": {"eq": "3-2"},
+        "traitsAny": ["FATED", "SNIPER"]
+      },
+      "tips": [
+        {
+          "category": "LEVELING",
+          "priority": 120,
+          "text": "Lên cấp 6 và hoàn thiện mốc 4 Fated với Ahri/Kindred.",
+          "requiresTrait": "FATED"
+        },
+        {
+          "category": "BOARD",
+          "priority": 90,
+          "text": "Đưa Sett + Sejuani lên tuyến trước, giữ Ashe + Aphelios ở hai góc đối diện.",
+          "requiresCarry": "ASHE"
+        }
+      ],
+      "correctives": [
+        {
+          "category": "ALERT",
+          "priority": 130,
+          "text": "Bạn đang chậm level 6 ở 3-2, roll nhẹ để tìm Ahri và lên cấp ngay.",
+          "requiresDeviation": "LEVEL_BEHIND"
+        }
+      ]
+    },
+    {
+      "id": "items_on_carry",
+      "match": {
+        "screen": ["PLANNING", "COMBAT"],
+        "carryAny": ["ASHE", "APHELIOS"],
+        "itemsContains": ["GUINSOOSRAGEBLADE"]
+      },
+      "tips": [
+        {
+          "category": "ITEMS",
+          "priority": 95,
+          "text": "Ghép Guinsoo + Last Whisper cho Ashe để phá tanker tuyến trước.",
+          "requiresItem": "GUINSOOSRAGEBLADE"
+        },
+        {
+          "category": "ITEMS",
+          "priority": 70,
+          "text": "Nếu chưa có Last Whisper, ưu tiên Guardbreaker từ kho đồ hoặc đi chợ.",
+          "requiresDeviation": "ITEMS_UNUSED"
+        }
+      ],
+      "correctives": [
+        {
+          "category": "ALERT",
+          "priority": 115,
+          "text": "Kho đồ còn trống, ghép ngay món cho Ashe trước khi vào giao tranh.",
+          "requiresDeviation": "ITEMS_UNUSED"
+        }
+      ]
+    },
+    {
+      "id": "carousel_priority",
       "match": {
         "screen": "CAROUSEL",
-        "needItem": "RecurveBow",
-        "carry": "Ashe"
+        "carryAny": ["ASHE", "APHELIOS"],
+        "itemsContains": [],
+        "traitsAny": ["SNIPER"]
       },
       "tips": [
-        "Ưu tiên Cung để ghép Guinsoo cho Ashe."
-      ]
+        {
+          "category": "SHOP",
+          "priority": 110,
+          "text": "Ưu tiên lấy Recurve Bow hoặc Găng để hoàn thiện combo sát thương cho Sniper."
+        }
+      ],
+      "correctives": []
     },
     {
-      "id": "COMBAT_POSITIONING_SNIPER",
+      "id": "augment_selection",
       "match": {
-        "screen": "COMBAT",
-        "haveTrait": "Sniper",
-        "enemyThreat": "Assassin"
+        "screen": "AUGMENT",
+        "augmentAny": ["SNIPERSNEST", "FATEDCROWN", "BALANCEDBUDGET"],
+        "traitsAny": ["FATED", "SNIPER"]
       },
       "tips": [
-        "Kéo carry vào góc có tanker che chắn sát thủ."
+        {
+          "category": "AUGMENT",
+          "priority": 130,
+          "text": "Chọn Tổ Thợ Săn để bắn xa, cố định vị trí Ashe trước khi combat.",
+          "requiresAugment": "SNIPERSNEST"
+        },
+        {
+          "category": "AUGMENT",
+          "priority": 140,
+          "text": "Định Mệnh Vương Miện giúp đạt mốc 6 Fated ở level 7, lấy ngay nếu thiếu ấn.",
+          "requiresAugment": "FATEDCROWN"
+        },
+        {
+          "category": "ECONOMY",
+          "priority": 90,
+          "text": "Nếu đang yếu máu, cân nhắc Ngân Sách Cân Bằng để hồi phục lãi mà vẫn roll giữ máu.",
+          "requiresAugment": "BALANCEDBUDGET"
+        }
+      ],
+      "correctives": []
+    },
+    {
+      "id": "frontline_check",
+      "match": {
+        "screen": "PLANNING",
+        "traitsAny": ["SNIPER", "FATED"]
+      },
+      "tips": [
+        {
+          "category": "BOARD",
+          "priority": 85,
+          "text": "Luôn duy trì ít nhất 2 Warden hoặc 1 tanker 4 tiền để bảo kê dàn sau.",
+          "requiresTrait": "WARDEN"
+        }
+      ],
+      "correctives": [
+        {
+          "category": "ALERT",
+          "priority": 125,
+          "text": "Không có tuyến trước! Bổ sung Sett/Sejuani trước khi ghép đồ cho carry.",
+          "requiresDeviation": "NO_FRONTLINE"
+        }
       ]
     }
   ]

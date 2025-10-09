@@ -1,30 +1,67 @@
 [
   {
     "id": "Ashe",
+    "name": "Ashe",
     "cost": 2,
     "traits": ["Fated", "Sniper"],
-    "ability": {
-      "name": "Volley",
-      "desc": "Bắn một loạt tên gây sát thương phép.",
-      "scaling": {"ap": 0.8}
-    },
+    "roles": ["carry", "backline"],
+    "recommendedItems": ["GuinsoosRageblade", "LastWhisper", "Guardbreaker"],
+    "rollTimings": ["3-1", "3-2"],
     "synergyTips": [
-      "Ghép cùng Xayah hoặc Aphelios để lấy mốc Sniper.",
-      "Tăng tốc đánh bằng Guinsoo giúp Ashe gây sát thương ổn định."
+      "Kết hợp cùng Aphelios để hoàn thành lõi Sniper.",
+      "Ưu tiên giữ Dao Điện Statikk ở giai đoạn đầu nếu chưa có cung."
+    ]
+  },
+  {
+    "id": "Aphelios",
+    "name": "Aphelios",
+    "cost": 4,
+    "traits": ["Fated", "Sniper"],
+    "roles": ["carry", "backline"],
+    "recommendedItems": ["GuinsoosRageblade", "RedBuff", "GiantSlayer"],
+    "rollTimings": ["4-1", "4-2"],
+    "synergyTips": [
+      "Kích hoạt Fated với Kindred để tăng tốc độ đánh.",
+      "Ưu tiên lõi Sniper hoặc hỗ trợ bắn tầm xa." 
     ]
   },
   {
     "id": "Sett",
-    "cost": 4,
-    "traits": ["Dragon", "Warrior"],
-    "ability": {
-      "name": "Haymaker",
-      "desc": "Tích tụ sát thương nhận vào và tung cú đấm cực mạnh.",
-      "scaling": {"hp": 0.25}
-    },
+    "name": "Sett",
+    "cost": 1,
+    "traits": ["Warden", "Pugilist"],
+    "roles": ["frontline", "controller"],
+    "recommendedItems": ["SunfireCape", "WarmogsArmor", "Redemption"],
+    "rollTimings": ["2-1", "2-2"],
     "synergyTips": [
-      "Đặt Sett ở giữa để nhận sát thương từ nhiều mục tiêu.",
-      "Cần trang bị chống chịu và hồi phục để phát huy tối đa."
+      "Là tanker rẻ tiền giúp câu kéo đầu game.",
+      "Kết hợp cùng Wukong để kích hoạt Warden sớm."
+    ]
+  },
+  {
+    "id": "Ahri",
+    "name": "Ahri",
+    "cost": 3,
+    "traits": ["Fated", "Sorcerer"],
+    "roles": ["carry", "ap"],
+    "recommendedItems": ["JeweledGauntlet", "RabadonsDeathcap", "BlueBuff"],
+    "rollTimings": ["3-2", "3-5"],
+    "synergyTips": [
+      "Tận dụng lõi phép hoặc Ngọc Pháp Sư để tăng lượng sát thương.",
+      "Kết hợp cùng Syndra để kích hoạt Sorcerer."
+    ]
+  },
+  {
+    "id": "Sejuani",
+    "name": "Sejuani",
+    "cost": 4,
+    "traits": ["Warden", "Invoker"],
+    "roles": ["frontline", "controller"],
+    "recommendedItems": ["GargoyleStoneplate", "DragonClaw", "Redemption"],
+    "rollTimings": ["4-2", "4-5"],
+    "synergyTips": [
+      "Đóng vai trò tanker chính ở level 7 trở lên.",
+      "Chiêu cuối khống chế diện rộng giúp bảo vệ dàn sau."
     ]
   }
 ]

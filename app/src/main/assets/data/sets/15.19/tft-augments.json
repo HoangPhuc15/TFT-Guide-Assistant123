@@ -1,16 +1,26 @@
 [
   {
-    "id": "SniperEmblem",
-    "tier": 2,
-    "effect": "Nhận 1 ấn Sniper và 1 Aphelios.",
-    "synergy": ["Sniper", "Fated"],
-    "usage": "Khi bạn đã có Ashe carry nhưng thiếu mốc Sniper 4."
+    "id": "FatedCrown",
+    "name": "Định Mệnh Vương Miện",
+    "style": "prismatic",
+    "keywords": ["Fated", "carry"],
+    "effect": "Nhận 1 Ấn Fated và 1 Ashe 2 sao.",
+    "synergy": "Đẩy mạnh đội hình Sniper, đảm bảo đủ mốc 4 Fated ở level 6."
   },
   {
-    "id": "Improvise",
-    "tier": 1,
-    "effect": "Trang bị tạm thời vào đầu mỗi round.",
-    "synergy": ["flex"],
-    "usage": "Dùng cho đội hình reroll cần nhiều item nhỏ."
+    "id": "SnipersNest",
+    "name": "Tổ Thợ Săn",
+    "style": "gold",
+    "keywords": ["Sniper", "position"],
+    "effect": "Tướng Sniper nhận thêm sát thương mỗi lần đứng yên 5 giây.",
+    "synergy": "Phối hợp cùng Ashe/Aphelios để snowball các round combat."
+  },
+  {
+    "id": "BalancedBudget",
+    "name": "Ngân Sách Cân Bằng",
+    "style": "silver",
+    "keywords": ["economy"],
+    "effect": "Nhận 8 vàng, khi kết thúc round nếu có 20+ vàng sẽ nhận thêm 2 vàng.",
+    "synergy": "Giúp duy trì lãi dù phải roll nhẹ để giữ máu ở mid game."
   }
 ]

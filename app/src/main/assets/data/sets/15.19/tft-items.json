@@ -1,14 +1,42 @@
 [
   {
     "id": "GuinsoosRageblade",
+    "name": "Guinsoo's Rageblade",
     "build": ["RecurveBow", "NeedlesslyLargeRod"],
-    "stat": {"attackSpeed": 0.25, "abilityPower": 30},
-    "bestFor": ["carry_ranged", "onhit"]
+    "stats": {"attackSpeed": 0.25, "abilityPower": 30},
+    "bestFor": ["carry", "sniper"],
+    "notes": "Tăng tốc độ đánh theo thời gian, phù hợp cho Ashe hoặc Aphelios."
   },
   {
-    "id": "TitanResolve",
-    "build": ["RecurveBow", "ChainVest"],
-    "stat": {"armor": 20, "attackDamage": 25},
-    "bestFor": ["bruiser", "frontline"]
+    "id": "LastWhisper",
+    "name": "Last Whisper",
+    "build": ["RecurveBow", "SparringGloves"],
+    "stats": {"criticalChance": 20, "armorPen": 30},
+    "bestFor": ["carry", "physical"],
+    "notes": "Phá giáp đối phương, đặc biệt hiệu quả khi gặp Warden."
+  },
+  {
+    "id": "Guardbreaker",
+    "name": "Guardbreaker",
+    "build": ["SparringGloves", "ChainVest"],
+    "stats": {"attackDamage": 20, "criticalChance": 20},
+    "bestFor": ["carry", "burst"],
+    "notes": "Tăng sát thương khi kẻ địch có lá chắn."
+  },
+  {
+    "id": "SunfireCape",
+    "name": "Sunfire Cape",
+    "build": ["ChainVest", "Giant'sBelt"],
+    "stats": {"armor": 35, "health": 300},
+    "bestFor": ["frontline"],
+    "notes": "Đốt máu kẻ địch và giảm hồi máu, thích hợp cho Sett đầu game."
+  },
+  {
+    "id": "GargoyleStoneplate",
+    "name": "Gargoyle Stoneplate",
+    "build": ["ChainVest", "NegatronCloak"],
+    "stats": {"armor": 30, "magicResist": 30},
+    "bestFor": ["frontline", "warden"],
+    "notes": "Cường hóa tanker chính khi đứng giữa đội hình địch."
   }
 ]

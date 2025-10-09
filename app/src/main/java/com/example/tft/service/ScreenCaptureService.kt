@@ -11,7 +11,7 @@ import android.media.ImageReader
 import android.media.projection.MediaProjection
 import android.os.Binder
 import android.os.IBinder
-import android.util.DisplayMetrics
+import android.os.Build
 import android.util.Log
 import android.view.WindowManager
 import android.hardware.display.VirtualDisplay
@@ -53,16 +53,20 @@ class ScreenCaptureService : Service() {
         projection?.stop()
         projection = intent?.getParcelableExtra(EXTRA_PROJECTION, MediaProjection::class.java)
             ?: return START_NOT_STICKY
-        val metrics = DisplayMetrics().also {
-            val wm = getSystemService(WindowManager::class.java)
-            wm?.defaultDisplay?.getMetrics(it)
+        val windowManager = getSystemService(WindowManager::class.java)
+        val densityDpi = resources.displayMetrics.densityDpi
+        val (width, height) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && windowManager != null) {
+            val bounds = windowManager.currentWindowMetrics.bounds
+            bounds.width() to bounds.height()
+        } else {
+            resources.displayMetrics.widthPixels to resources.displayMetrics.heightPixels
         }
-        reader = ImageReader.newInstance(metrics.widthPixels, metrics.heightPixels, ImageFormat.RGBA_8888, 2)
+        reader = ImageReader.newInstance(width, height, ImageFormat.RGBA_8888, 2)
         virtualDisplay = projection?.createVirtualDisplay(
             DISPLAY_NAME,
-            metrics.widthPixels,
-            metrics.heightPixels,
-            metrics.densityDpi,
+            width,
+            height,
+            densityDpi,
             0,
             reader?.surface,
             null,
@@ -86,30 +90,38 @@ class ScreenCaptureService : Service() {
         while (projection != null) {
             val image = reader?.acquireLatestImage()
             if (image != null) {
-                val plane = image.planes.first()
-                val buffer = plane.buffer
-                val pixelStride = plane.pixelStride
-                val rowStride = plane.rowStride
-                val rowPadding = rowStride - pixelStride * image.width
-                val bitmapWidth = image.width + rowPadding / pixelStride
-                val rawBitmap = Bitmap.createBitmap(bitmapWidth, image.height, Bitmap.Config.ARGB_8888)
-                rawBitmap.copyPixelsFromBuffer(buffer)
-                val bitmap = Bitmap.createBitmap(rawBitmap, 0, 0, image.width, image.height)
-                val state = analyzer.analyze(bitmap)
-                emitTips(state)
-                image.close()
+                try {
+                    val plane = image.planes.first()
+                    val buffer = plane.buffer
+                    val pixelStride = plane.pixelStride
+                    val rowStride = plane.rowStride
+                    val rowPadding = rowStride - pixelStride * image.width
+                    val bitmapWidth = image.width + rowPadding / pixelStride
+                    val rawBitmap = Bitmap.createBitmap(bitmapWidth, image.height, Bitmap.Config.ARGB_8888)
+                    rawBitmap.copyPixelsFromBuffer(buffer)
+                    val bitmap = Bitmap.createBitmap(rawBitmap, 0, 0, image.width, image.height)
+                    try {
+                        val state = analyzer.analyze(bitmap)
+                        emitTips(state)
+                    } finally {
+                        bitmap.recycle()
+                        rawBitmap.recycle()
+                    }
+                } finally {
+                    image.close()
+                }
             }
             delay(500L)
         }
     }
 
     private fun emitTips(state: TipState) {
-        val tips = tipEngine.evaluate(state)
-        if (tips.tips.isEmpty()) {
+        val session = tipEngine.evaluate(state)
+        if (session.entries.isEmpty()) {
             Log.d(TAG, "No tips for state ${state.screen}")
             return
         }
-        BubbleNotifier.post(this, state.screen + state.metadata.optLong("timestamp"), tips.tips)
+        BubbleNotifier.post(this, session, tipEngine.patch)
     }
 
     private fun foregroundNotification(): Notification {

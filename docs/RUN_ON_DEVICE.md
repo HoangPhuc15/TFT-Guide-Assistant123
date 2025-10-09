@@ -47,14 +47,14 @@ A persistent notification appears while capture is active. Use it to stop the as
 ## 6. Using the bubble
 
 1. After permissions are granted, tap **Start assistant**. A chat-style bubble appears on the edge of the screen.
-2. Tap the bubble to open the tip panel. The demo tips are generated from `tips-rules.json`; swipe or tap **Xem gợi ý khác** to cycle.
+2. Tap the bubble to open the tip panel. The assistant ranks proactive vs. corrective steps (lên cấp, ghép đồ, chọn lõi) from `tips-rules.json`; dùng **Gợi ý kế tiếp** để duyệt các bước tiếp theo.
 3. Drag the bubble to a corner so it doesn’t obstruct TFT gameplay. Use **Ẩn đến hết round** to collapse the panel until the next tip update.
 
 ## 7. Updating data & logic
 
 - Riot data now refreshes itself on launch. Bump `ddragonVersion` inside `gradle.properties` when a new patch lands so the runtime downloader pulls the latest champions/items/traits/augments payloads into `files/data/sets/live/`.
 - Point `tipsRulesUrl` at a hosted `tips-rules.json` (GitHub raw, S3, etc.) if you want the bubble advice to change without shipping a new APK. Leave it blank to rely on the bundled offline sample.
-- Expand `ScreenAnalyzer` with OCR/vision logic. Right now it emits a static state so you can focus on wiring.
-- Add new match conditions in `tips-rules.json` and extend `TipEngine.matches` if you need fuzzy or ranged comparisons.
+- Expand `ScreenAnalyzer` with extra detectors (minimap, quân địch). Nó đã sử dụng ML Kit Text Recognition + fuzzy match để xác định stage, level, vàng, đội hình, kho đồ và augment.
+- Thêm điều kiện mới trong `tips-rules.json` nếu bạn muốn bắt thêm trạng thái: engine hiện hỗ trợ stage, khoảng level/vàng/lãi, thành phần bench/board/shop, augment, carry, và các cờ sai lệch (`LEVEL_BEHIND`, `ITEMS_UNUSED`, ...).
 
 Following this checklist produces an installable APK that demonstrates the full permission + bubble flow, ready for you to plug in production-grade analysis and guidance.
