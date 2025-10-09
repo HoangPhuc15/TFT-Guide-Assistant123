@@ -1,0 +1,34 @@
+[
+  {
+    "id": "Fated",
+    "name": "Fated",
+    "breakpoints": [2, 4, 6],
+    "description": "Kích hoạt buff song đấu sĩ, tăng chỉ số cho cặp định mệnh.",
+    "coreUnits": ["Ashe", "Aphelios", "Ahri"],
+    "notes": "Ưu tiên ghép đôi carry + hỗ trợ để nhận buff mạnh nhất."
+  },
+  {
+    "id": "Sniper",
+    "name": "Sniper",
+    "breakpoints": [2, 4, 6],
+    "description": "Tăng sát thương dựa trên khoảng cách với mục tiêu.",
+    "coreUnits": ["Ashe", "Aphelios"],
+    "notes": "Luôn đặt carry ở góc để tận dụng tối đa buff."
+  },
+  {
+    "id": "Warden",
+    "name": "Warden",
+    "breakpoints": [2, 4, 6],
+    "description": "Tăng giáp cho tuyến đầu.",
+    "coreUnits": ["Sett", "Sejuani"],
+    "notes": "Có thể splash vào đội hình Fated để chống sát thủ." 
+  },
+  {
+    "id": "Sorcerer",
+    "name": "Sorcerer",
+    "breakpoints": [2, 4, 6],
+    "description": "Gia tăng sức mạnh phép thuật và hồi mana.",
+    "coreUnits": ["Ahri"],
+    "notes": "Kết hợp cùng Invoker để luân phiên tung chiêu." 
+  }
+]

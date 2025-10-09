@@ -1,0 +1,67 @@
+[
+  {
+    "id": "Ashe",
+    "name": "Ashe",
+    "cost": 2,
+    "traits": ["Fated", "Sniper"],
+    "roles": ["carry", "backline"],
+    "recommendedItems": ["GuinsoosRageblade", "LastWhisper", "Guardbreaker"],
+    "rollTimings": ["3-1", "3-2"],
+    "synergyTips": [
+      "Kết hợp cùng Aphelios để hoàn thành lõi Sniper.",
+      "Ưu tiên giữ Dao Điện Statikk ở giai đoạn đầu nếu chưa có cung."
+    ]
+  },
+  {
+    "id": "Aphelios",
+    "name": "Aphelios",
+    "cost": 4,
+    "traits": ["Fated", "Sniper"],
+    "roles": ["carry", "backline"],
+    "recommendedItems": ["GuinsoosRageblade", "RedBuff", "GiantSlayer"],
+    "rollTimings": ["4-1", "4-2"],
+    "synergyTips": [
+      "Kích hoạt Fated với Kindred để tăng tốc độ đánh.",
+      "Ưu tiên lõi Sniper hoặc hỗ trợ bắn tầm xa." 
+    ]
+  },
+  {
+    "id": "Sett",
+    "name": "Sett",
+    "cost": 1,
+    "traits": ["Warden", "Pugilist"],
+    "roles": ["frontline", "controller"],
+    "recommendedItems": ["SunfireCape", "WarmogsArmor", "Redemption"],
+    "rollTimings": ["2-1", "2-2"],
+    "synergyTips": [
+      "Là tanker rẻ tiền giúp câu kéo đầu game.",
+      "Kết hợp cùng Wukong để kích hoạt Warden sớm."
+    ]
+  },
+  {
+    "id": "Ahri",
+    "name": "Ahri",
+    "cost": 3,
+    "traits": ["Fated", "Sorcerer"],
+    "roles": ["carry", "ap"],
+    "recommendedItems": ["JeweledGauntlet", "RabadonsDeathcap", "BlueBuff"],
+    "rollTimings": ["3-2", "3-5"],
+    "synergyTips": [
+      "Tận dụng lõi phép hoặc Ngọc Pháp Sư để tăng lượng sát thương.",
+      "Kết hợp cùng Syndra để kích hoạt Sorcerer."
+    ]
+  },
+  {
+    "id": "Sejuani",
+    "name": "Sejuani",
+    "cost": 4,
+    "traits": ["Warden", "Invoker"],
+    "roles": ["frontline", "controller"],
+    "recommendedItems": ["GargoyleStoneplate", "DragonClaw", "Redemption"],
+    "rollTimings": ["4-2", "4-5"],
+    "synergyTips": [
+      "Đóng vai trò tanker chính ở level 7 trở lên.",
+      "Chiêu cuối khống chế diện rộng giúp bảo vệ dàn sau."
+    ]
+  }
+]
