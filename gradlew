@@ -38,6 +38,116 @@ done
 SAVED="`pwd`"
 cd "`dirname \"$PRG\"`/" >/dev/null
 APP_HOME="`pwd -P`"
+
+# Automatically bootstrap the Gradle wrapper JAR when it is not present so
+# developers do not have to commit the binary artifact to version control.
+WRAPPER_DIR="$APP_HOME/gradle/wrapper"
+WRAPPER_JAR="$WRAPPER_DIR/gradle-wrapper.jar"
+WRAPPER_PROPERTIES="$WRAPPER_DIR/gradle-wrapper.properties"
+
+bootstrap_with_python() {
+    BOOTSTRAP_SCRIPT="$APP_HOME/tools/bootstrap_gradle_wrapper.py"
+    if [ ! -f "$BOOTSTRAP_SCRIPT" ] ; then
+        return 1
+    fi
+
+    if command -v python3 >/dev/null 2>&1 ; then
+        PYTHON_CMD=python3
+    elif command -v python >/dev/null 2>&1 ; then
+        PYTHON_CMD=python
+    else
+        return 1
+    fi
+
+    "$PYTHON_CMD" "$BOOTSTRAP_SCRIPT"
+}
+
+distribution_url_from_properties() {
+    if [ ! -f "$WRAPPER_PROPERTIES" ] ; then
+        return 1
+    fi
+    grep "^distributionUrl=" "$WRAPPER_PROPERTIES" | sed 's#^distributionUrl=##' | sed 's#\\:#:#g'
+}
+
+extract_version_from_url() {
+    echo "$1" | sed -n 's#.*/gradle-\(.*\)-bin.zip#\1#p'
+}
+
+bootstrap_with_cli_tools() {
+    DISTRIBUTION_URL="$(distribution_url_from_properties)"
+    if [ -z "$DISTRIBUTION_URL" ] ; then
+        echo "Unable to locate Gradle distribution URL; please run tools/bootstrap_gradle_wrapper.py manually." >&2
+        return 1
+    fi
+
+    GRADLE_VERSION="$(extract_version_from_url "$DISTRIBUTION_URL")"
+    if [ -z "$GRADLE_VERSION" ] ; then
+        echo "Unable to determine Gradle version from $DISTRIBUTION_URL" >&2
+        return 1
+    fi
+
+    TMP_ZIP="$(mktemp 2>/dev/null)"
+    if [ $? -ne 0 ] || [ -z "$TMP_ZIP" ]; then
+        TMP_ZIP="$(mktemp -t gradle-wrapper 2>/dev/null)"
+    fi
+    if [ -z "$TMP_ZIP" ]; then
+        echo "Unable to allocate temporary file for Gradle wrapper." >&2
+        return 1
+    fi
+    CLEANUP_ZIP=true
+
+    if command -v curl >/dev/null 2>&1 ; then
+        curl --fail --location --silent --show-error "$DISTRIBUTION_URL" --output "$TMP_ZIP" || { rm -f "$TMP_ZIP"; return 1; }
+    elif command -v wget >/dev/null 2>&1 ; then
+        wget --quiet --output-document="$TMP_ZIP" "$DISTRIBUTION_URL" || { rm -f "$TMP_ZIP"; return 1; }
+    else
+        echo "Unable to download Gradle; install curl, wget, or Python." >&2
+        return 1
+    fi
+
+    if command -v unzip >/dev/null 2>&1 ; then
+        if ! unzip -p "$TMP_ZIP" "gradle-$GRADLE_VERSION/lib/gradle-wrapper.jar" > "$WRAPPER_JAR" ; then
+            rm -f "$WRAPPER_JAR"
+            rm -f "$TMP_ZIP"
+            return 1
+        fi
+    elif command -v jar >/dev/null 2>&1 ; then
+        TMP_DIR="$(mktemp -d 2>/dev/null || mktemp -d -t gradle-wrapper)"
+        CLEANUP_DIR=true
+        if ! (cd "$TMP_DIR" && jar xf "$TMP_ZIP" "gradle-$GRADLE_VERSION/lib/gradle-wrapper.jar") ; then
+            rm -rf "$TMP_DIR"
+            rm -f "$TMP_ZIP"
+            return 1
+        fi
+        if ! cp "$TMP_DIR/gradle-$GRADLE_VERSION/lib/gradle-wrapper.jar" "$WRAPPER_JAR" ; then
+            rm -f "$WRAPPER_JAR"
+            rm -rf "$TMP_DIR"
+            rm -f "$TMP_ZIP"
+            return 1
+        fi
+    else
+        echo "Unable to extract Gradle wrapper; install unzip, jar, or Python." >&2
+        return 1
+    fi
+
+    if [ "${CLEANUP_DIR:-}" = true ] ; then
+        rm -rf "$TMP_DIR"
+    fi
+    if [ "$CLEANUP_ZIP" = true ] ; then
+        rm -f "$TMP_ZIP"
+    fi
+}
+
+if [ ! -f "$WRAPPER_JAR" ] ; then
+    ensure_dir="$(dirname "$WRAPPER_JAR")"
+    mkdir -p "$ensure_dir"
+    if ! bootstrap_with_python ; then
+        if ! bootstrap_with_cli_tools ; then
+            echo "Failed to provision Gradle wrapper JAR. Install Python, curl, or wget." >&2
+            exit 1
+        fi
+    fi
+fi
 cd "$SAVED" >/dev/null
 
 APP_NAME="Gradle"
