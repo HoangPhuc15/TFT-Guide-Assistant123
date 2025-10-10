@@ -13,6 +13,11 @@ dependencyResolutionManagement {
         mavenCentral()
     }
 }
-rootProject.name = "TestFloatingBubble"
-include ':app'
-include ':FloatingBubbleView'
+
+// Gradle 7+ ships with stable module metadata support so we intentionally avoid
+// legacy enableFeaturePreview("GRADLE_METADATA") and
+// enableFeaturePreview("STABLE_PUBLISHING") calls that would crash newer
+// distributions.
+rootProject.name = "tft-guide-assistant"
+
+include(":app")

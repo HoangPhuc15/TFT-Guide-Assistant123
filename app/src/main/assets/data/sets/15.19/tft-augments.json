@@ -1,0 +1,26 @@
+[
+  {
+    "id": "FatedCrown",
+    "name": "Định Mệnh Vương Miện",
+    "style": "prismatic",
+    "keywords": ["Fated", "carry"],
+    "effect": "Nhận 1 Ấn Fated và 1 Ashe 2 sao.",
+    "synergy": "Đẩy mạnh đội hình Sniper, đảm bảo đủ mốc 4 Fated ở level 6."
+  },
+  {
+    "id": "SnipersNest",
+    "name": "Tổ Thợ Săn",
+    "style": "gold",
+    "keywords": ["Sniper", "position"],
+    "effect": "Tướng Sniper nhận thêm sát thương mỗi lần đứng yên 5 giây.",
+    "synergy": "Phối hợp cùng Ashe/Aphelios để snowball các round combat."
+  },
+  {
+    "id": "BalancedBudget",
+    "name": "Ngân Sách Cân Bằng",
+    "style": "silver",
+    "keywords": ["economy"],
+    "effect": "Nhận 8 vàng, khi kết thúc round nếu có 20+ vàng sẽ nhận thêm 2 vàng.",
+    "synergy": "Giúp duy trì lãi dù phải roll nhẹ để giữ máu ở mid game."
+  }
+]
