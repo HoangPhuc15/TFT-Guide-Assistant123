@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Sand Crush Mobile</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b1020;
+        --panel: #151b2f;
+        --accent: #67d4ff;
+        --text: #f2f6ff;
+        --muted: #98a2c3;
+        --danger: #ff6b6b;
+        --success: #2ee59d;
+      }
+
+      * {
+        box-sizing: border-box;
+        touch-action: manipulation;
+        user-select: none;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      #game {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+        background: radial-gradient(circle at top, #1c2450 0%, #0b1020 70%);
+      }
+
+      .ui {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+      }
+
+      .panel {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        background: rgba(21, 27, 47, 0.85);
+        padding: 10px 12px;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        pointer-events: auto;
+      }
+
+      .stats {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: 13px;
+      }
+
+      .stats span {
+        color: var(--muted);
+      }
+
+      .stats strong {
+        color: var(--text);
+        font-size: 15px;
+      }
+
+      .buttons {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      button {
+        appearance: none;
+        border: none;
+        border-radius: 12px;
+        padding: 10px 12px;
+        font-weight: 600;
+        color: #08101f;
+        background: linear-gradient(135deg, #67d4ff, #8df7c5);
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
+        font-size: 14px;
+      }
+
+      button.secondary {
+        background: linear-gradient(135deg, #3c466b, #4b5a8f);
+        color: var(--text);
+      }
+
+      button.danger {
+        background: linear-gradient(135deg, #ff6b6b, #ff9c6b);
+      }
+
+      #overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 24px;
+        text-align: center;
+        background: rgba(6, 10, 20, 0.72);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+      }
+
+      #overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      #overlay h1 {
+        margin: 0 0 12px;
+        font-size: 28px;
+      }
+
+      #overlay p {
+        margin: 0 0 18px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      #overlay .card {
+        background: rgba(21, 27, 47, 0.92);
+        padding: 22px;
+        border-radius: 16px;
+        max-width: 320px;
+      }
+
+      @media (min-width: 720px) {
+        .ui {
+          max-width: 420px;
+          left: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game" aria-label="Sand Crush game canvas"></canvas>
+
+    <div class="ui">
+      <div class="panel">
+        <div class="stats">
+          <span>Level</span>
+          <strong id="levelLabel">1</strong>
+        </div>
+        <div class="stats">
+          <span>Score</span>
+          <strong id="scoreLabel">0</strong>
+        </div>
+        <div class="stats">
+          <span>Highest</span>
+          <strong id="highScoreLabel">0</strong>
+        </div>
+        <div class="stats">
+          <span>Audio</span>
+          <strong id="audioLabel">On</strong>
+        </div>
+      </div>
+
+      <div class="panel buttons">
+        <button id="startBtn">Start</button>
+        <button id="audioBtn" class="secondary">Audio</button>
+        <button id="resetBtn" class="secondary">Reset</button>
+        <button id="fullResetBtn" class="danger">Full Reset</button>
+      </div>
+    </div>
+
+    <div id="overlay">
+      <div class="card">
+        <h1>Sand Crush</h1>
+        <p id="overlayText">
+          Guide each sand color into the matching container. Tap gates to open, tap barriers to remove.
+        </p>
+        <button id="overlayBtn">Start Game</button>
+      </div>
+    </div>
+
+    <script>
+      // --- Core configuration ---
+      const GRID_WIDTH = 120;
+      const GRID_HEIGHT = 180;
+      const COLOR_MAP = {
+        empty: 0,
+        solid: 1,
+        red: 2,
+        blue: 3,
+        green: 4,
+        containerRed: 5,
+        containerBlue: 6,
+        containerGreen: 7,
+      };
+
+      const SAND_COLORS = [
+        { id: COLOR_MAP.red, rgb: "#ff6b6b" },
+        { id: COLOR_MAP.blue, rgb: "#67d4ff" },
+        { id: COLOR_MAP.green, rgb: "#2ee59d" },
+      ];
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const overlay = document.getElementById("overlay");
+      const overlayText = document.getElementById("overlayText");
+      const overlayBtn = document.getElementById("overlayBtn");
+      const startBtn = document.getElementById("startBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const fullResetBtn = document.getElementById("fullResetBtn");
+      const levelLabel = document.getElementById("levelLabel");
+      const scoreLabel = document.getElementById("scoreLabel");
+      const highScoreLabel = document.getElementById("highScoreLabel");
+      const audioLabel = document.getElementById("audioLabel");
+      const audioBtn = document.getElementById("audioBtn");
+
+      let cellSize = 4;
+      let offsetX = 0;
+      let offsetY = 0;
+      let running = false;
+      let frame = 0;
+      let lastTick = 0;
+      let levelIndex = 0;
+      let score = 0;
+      let highScore = 0;
+      let allowMix = false;
+      let levelTargets = { red: 120, blue: 120, green: 120 };
+      let collected = { red: 0, blue: 0, green: 0 };
+      let saveCooldown = 0;
+      let gates = new Map();
+      let sources = [];
+      let baseGrid = [];
+      let sandGrid = [];
+      let audioEnabled = true;
+      let backgroundHandle = null;
+      let audioContext = null;
+
+      // --- Level structure (obstacles, sources, gates, targets) ---
+      const LEVELS = [
+        {
+          name: "Crystalline Valley",
+          allowMix: false,
+          targets: { red: 120, blue: 120, green: 0 },
+          sources: [
+            { x: 20, y: 8, color: COLOR_MAP.red, rate: 2 },
+            { x: 90, y: 8, color: COLOR_MAP.blue, rate: 2 },
+          ],
+          solids: [
+            { type: "rect", x: 0, y: 0, w: 120, h: 4 },
+            { type: "rect", x: 0, y: 0, w: 4, h: 180 },
+            { type: "rect", x: 116, y: 0, w: 4, h: 180 },
+            { type: "rect", x: 0, y: 176, w: 120, h: 4 },
+            { type: "triangle", x: 30, y: 40, w: 30, h: 20, dir: "down-right" },
+            { type: "triangle", x: 60, y: 40, w: 30, h: 20, dir: "down-left" },
+            { type: "rect", x: 48, y: 70, w: 24, h: 6 },
+          ],
+          containers: [
+            { color: COLOR_MAP.containerRed, x: 8, y: 160, w: 36, h: 10 },
+            { color: COLOR_MAP.containerBlue, x: 76, y: 160, w: 36, h: 10 },
+          ],
+          gates: [{ x: 56, y: 76 }],
+        },
+        {
+          name: "Jade Switchbacks",
+          allowMix: false,
+          targets: { red: 100, blue: 100, green: 100 },
+          sources: [
+            { x: 15, y: 10, color: COLOR_MAP.red, rate: 2 },
+            { x: 60, y: 10, color: COLOR_MAP.green, rate: 2 },
+            { x: 105, y: 10, color: COLOR_MAP.blue, rate: 2 },
+          ],
+          solids: [
+            { type: "rect", x: 0, y: 0, w: 120, h: 4 },
+            { type: "rect", x: 0, y: 0, w: 4, h: 180 },
+            { type: "rect", x: 116, y: 0, w: 4, h: 180 },
+            { type: "rect", x: 0, y: 176, w: 120, h: 4 },
+            { type: "rect", x: 16, y: 30, w: 88, h: 6 },
+            { type: "triangle", x: 20, y: 36, w: 30, h: 22, dir: "down-right" },
+            { type: "triangle", x: 70, y: 36, w: 30, h: 22, dir: "down-left" },
+            { type: "rect", x: 44, y: 70, w: 32, h: 6 },
+            { type: "rect", x: 20, y: 100, w: 80, h: 6 },
+          ],
+          containers: [
+            { color: COLOR_MAP.containerRed, x: 6, y: 156, w: 34, h: 12 },
+            { color: COLOR_MAP.containerGreen, x: 44, y: 156, w: 32, h: 12 },
+            { color: COLOR_MAP.containerBlue, x: 80, y: 156, w: 34, h: 12 },
+          ],
+          gates: [
+            { x: 58, y: 76 },
+            { x: 26, y: 106 },
+            { x: 90, y: 106 },
+          ],
+        },
+        {
+          name: "Aurora Mixer",
+          allowMix: true,
+          targets: { red: 160, blue: 160, green: 160 },
+          sources: [
+            { x: 15, y: 8, color: COLOR_MAP.red, rate: 3 },
+            { x: 60, y: 8, color: COLOR_MAP.green, rate: 3 },
+            { x: 105, y: 8, color: COLOR_MAP.blue, rate: 3 },
+          ],
+          solids: [
+            { type: "rect", x: 0, y: 0, w: 120, h: 4 },
+            { type: "rect", x: 0, y: 0, w: 4, h: 180 },
+            { type: "rect", x: 116, y: 0, w: 4, h: 180 },
+            { type: "rect", x: 0, y: 176, w: 120, h: 4 },
+            { type: "triangle", x: 15, y: 35, w: 35, h: 30, dir: "down-right" },
+            { type: "triangle", x: 70, y: 35, w: 35, h: 30, dir: "down-left" },
+            { type: "rect", x: 48, y: 70, w: 24, h: 6 },
+            { type: "rect", x: 20, y: 100, w: 80, h: 6 },
+            { type: "rect", x: 52, y: 126, w: 16, h: 6 },
+          ],
+          containers: [
+            { color: COLOR_MAP.containerRed, x: 6, y: 156, w: 32, h: 12 },
+            { color: COLOR_MAP.containerGreen, x: 44, y: 156, w: 32, h: 12 },
+            { color: COLOR_MAP.containerBlue, x: 82, y: 156, w: 32, h: 12 },
+          ],
+          gates: [{ x: 58, y: 76 }],
+        },
+      ];
+
+      // --- Utility: grid helpers ---
+      function createGrid(value) {
+        const grid = new Array(GRID_HEIGHT);
+        for (let y = 0; y < GRID_HEIGHT; y += 1) {
+          grid[y] = new Array(GRID_WIDTH).fill(value);
+        }
+        return grid;
+      }
+
+      function inBounds(x, y) {
+        return x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT;
+      }
+
+      // --- Physics logic: cellular sand simulation ---
+      function updateSand() {
+        let moved = 0;
+        const direction = frame % 2 === 0 ? 1 : -1;
+        for (let y = GRID_HEIGHT - 2; y >= 0; y -= 1) {
+          const startX = direction === 1 ? 0 : GRID_WIDTH - 1;
+          const endX = direction === 1 ? GRID_WIDTH : -1;
+          for (let x = startX; x !== endX; x += direction) {
+            const sand = sandGrid[y][x];
+            if (sand === COLOR_MAP.empty) continue;
+
+            const below = y + 1;
+            if (!inBounds(x, below)) continue;
+
+            if (isContainer(x, below)) {
+              collectSand(sand, x, below);
+              sandGrid[y][x] = COLOR_MAP.empty;
+              continue;
+            }
+
+            if (canFallTo(x, below)) {
+              sandGrid[below][x] = sand;
+              sandGrid[y][x] = COLOR_MAP.empty;
+              moved += 1;
+              continue;
+            }
+
+            const left = x - 1;
+            const right = x + 1;
+            if (inBounds(left, below) && canFallTo(left, below)) {
+              sandGrid[below][left] = sand;
+              sandGrid[y][x] = COLOR_MAP.empty;
+              moved += 1;
+              continue;
+            }
+            if (inBounds(right, below) && canFallTo(right, below)) {
+              sandGrid[below][right] = sand;
+              sandGrid[y][x] = COLOR_MAP.empty;
+              moved += 1;
+            }
+          }
+        }
+        if (moved > 0 && frame % 6 === 0) {
+          playEffect("fall");
+        }
+      }
+
+      function canFallTo(x, y) {
+        if (!inBounds(x, y)) return false;
+        if (sandGrid[y][x] !== COLOR_MAP.empty) return false;
+        if (baseGrid[y][x] === COLOR_MAP.solid) return false;
+        if (isGateClosed(x, y)) return false;
+        if (isContainer(x, y)) return true;
+        return baseGrid[y][x] === COLOR_MAP.empty;
+      }
+
+      function isContainer(x, y) {
+        return (
+          baseGrid[y][x] === COLOR_MAP.containerRed ||
+          baseGrid[y][x] === COLOR_MAP.containerBlue ||
+          baseGrid[y][x] === COLOR_MAP.containerGreen
+        );
+      }
+
+      function isGateClosed(x, y) {
+        return gates.has(`${x},${y}`) && !gates.get(`${x},${y}`);
+      }
+
+      function collectSand(sand, x, y) {
+        const container = baseGrid[y][x];
+        const colorName =
+          sand === COLOR_MAP.red ? "red" : sand === COLOR_MAP.blue ? "blue" : "green";
+        const containerName =
+          container === COLOR_MAP.containerRed
+            ? "red"
+            : container === COLOR_MAP.containerBlue
+            ? "blue"
+            : "green";
+
+        if (!allowMix && colorName !== containerName) {
+          playEffect("fail");
+          showOverlay("Wrong container! Level reset.");
+          resetLevel();
+          return;
+        }
+
+        if (colorName === "red") collected.red += 1;
+        if (colorName === "blue") collected.blue += 1;
+        if (colorName === "green") collected.green += 1;
+        score += 1;
+        playEffect("collect");
+        updateUI();
+        checkWin();
+      }
+
+      function checkWin() {
+        const targetRed = levelTargets.red || 0;
+        const targetBlue = levelTargets.blue || 0;
+        const targetGreen = levelTargets.green || 0;
+        if (
+          collected.red >= targetRed &&
+          collected.blue >= targetBlue &&
+          collected.green >= targetGreen
+        ) {
+          playEffect("success");
+          showOverlay("Level complete! Tap Start to continue.");
+          running = false;
+          levelIndex = (levelIndex + 1) % LEVELS.length;
+          saveState();
+        }
+      }
+
+      // --- Level building ---
+      function buildLevel(index) {
+        const level = LEVELS[index];
+        allowMix = level.allowMix;
+        levelTargets = level.targets;
+        sources = level.sources;
+        collected = { red: 0, blue: 0, green: 0 };
+        baseGrid = createGrid(COLOR_MAP.empty);
+        sandGrid = createGrid(COLOR_MAP.empty);
+        gates = new Map();
+
+        level.solids.forEach((shape) => {
+          if (shape.type === "rect") {
+            fillRect(shape.x, shape.y, shape.w, shape.h, COLOR_MAP.solid);
+          }
+          if (shape.type === "triangle") {
+            fillTriangle(shape);
+          }
+        });
+
+        level.containers.forEach((container) => {
+          fillRect(container.x, container.y, container.w, container.h, container.color);
+        });
+
+        level.gates.forEach((gate) => {
+          gates.set(`${gate.x},${gate.y}`, false);
+        });
+      }
+
+      function fillRect(x, y, w, h, value) {
+        for (let iy = y; iy < y + h; iy += 1) {
+          for (let ix = x; ix < x + w; ix += 1) {
+            if (inBounds(ix, iy)) baseGrid[iy][ix] = value;
+          }
+        }
+      }
+
+      function fillTriangle(shape) {
+        const { x, y, w, h, dir } = shape;
+        for (let iy = 0; iy < h; iy += 1) {
+          const rowWidth = Math.floor(((iy + 1) / h) * w);
+          for (let ix = 0; ix < rowWidth; ix += 1) {
+            let px = x + ix;
+            if (dir === "down-left") px = x + (w - rowWidth) + ix;
+            const py = y + iy;
+            if (inBounds(px, py)) baseGrid[py][px] = COLOR_MAP.solid;
+          }
+        }
+      }
+
+      // --- Rendering ---
+      function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawBackground();
+
+        for (let y = 0; y < GRID_HEIGHT; y += 1) {
+          for (let x = 0; x < GRID_WIDTH; x += 1) {
+            const base = baseGrid[y][x];
+            if (base === COLOR_MAP.solid) {
+              drawCell(x, y, "#3c466b");
+            } else if (base === COLOR_MAP.containerRed) {
+              drawCell(x, y, "#7a1b1b");
+            } else if (base === COLOR_MAP.containerBlue) {
+              drawCell(x, y, "#0d3c66");
+            } else if (base === COLOR_MAP.containerGreen) {
+              drawCell(x, y, "#0c5037");
+            }
+
+            const sand = sandGrid[y][x];
+            if (sand === COLOR_MAP.red) drawCell(x, y, "#ff6b6b");
+            if (sand === COLOR_MAP.blue) drawCell(x, y, "#67d4ff");
+            if (sand === COLOR_MAP.green) drawCell(x, y, "#2ee59d");
+          }
+        }
+
+        gates.forEach((open, key) => {
+          const [x, y] = key.split(",").map(Number);
+          drawGate(x, y, open);
+        });
+
+        drawSources();
+      }
+
+      function drawBackground() {
+        ctx.save();
+        ctx.globalAlpha = 0.15;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
+      }
+
+      function drawCell(x, y, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(
+          offsetX + x * cellSize,
+          offsetY + y * cellSize,
+          cellSize,
+          cellSize
+        );
+      }
+
+      function drawGate(x, y, open) {
+        ctx.save();
+        ctx.strokeStyle = open ? "#8df7c5" : "#ffb347";
+        ctx.lineWidth = Math.max(1, cellSize * 0.2);
+        ctx.strokeRect(
+          offsetX + x * cellSize,
+          offsetY + y * cellSize,
+          cellSize,
+          cellSize
+        );
+        ctx.restore();
+      }
+
+      function drawSources() {
+        sources.forEach((source) => {
+          ctx.save();
+          ctx.globalAlpha = 0.8;
+          ctx.fillStyle =
+            source.color === COLOR_MAP.red
+              ? "#ff6b6b"
+              : source.color === COLOR_MAP.blue
+              ? "#67d4ff"
+              : "#2ee59d";
+          ctx.beginPath();
+          ctx.arc(
+            offsetX + source.x * cellSize,
+            offsetY + source.y * cellSize,
+            cellSize * 1.6,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+          ctx.restore();
+        });
+      }
+
+      // --- Input: tap to remove barrier or toggle gate ---
+      function handlePointer(event) {
+        if (!running) return;
+        const rect = canvas.getBoundingClientRect();
+        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+        const clientY = event.touches ? event.touches[0].clientY : event.clientY;
+        const x = Math.floor((clientX - rect.left - offsetX) / cellSize);
+        const y = Math.floor((clientY - rect.top - offsetY) / cellSize);
+        if (!inBounds(x, y)) return;
+
+        const gateKey = `${x},${y}`;
+        if (gates.has(gateKey)) {
+          gates.set(gateKey, !gates.get(gateKey));
+          playEffect("click");
+          saveState();
+          return;
+        }
+
+        if (baseGrid[y][x] === COLOR_MAP.solid) {
+          baseGrid[y][x] = COLOR_MAP.empty;
+          playEffect("click");
+          saveState();
+        }
+      }
+
+      // --- Sand sources ---
+      function spawnSand() {
+        sources.forEach((source) => {
+          if (Math.random() * 10 < source.rate) {
+            const x = source.x;
+            const y = source.y;
+            if (inBounds(x, y) && sandGrid[y][x] === COLOR_MAP.empty) {
+              sandGrid[y][x] = source.color;
+            }
+          }
+        });
+      }
+
+      // --- Save/load system ---
+      function saveState() {
+        const state = {
+          levelIndex,
+          score,
+          collected,
+          sand: sandGrid.map((row) => row.join("")).join("|"),
+          gates: Array.from(gates.entries()),
+        };
+        localStorage.setItem("sand-crush-state", JSON.stringify(state));
+        localStorage.setItem("sand-crush-high", String(highScore));
+        localStorage.setItem("sand-crush-audio", audioEnabled ? "1" : "0");
+      }
+
+      function loadState() {
+        const stored = localStorage.getItem("sand-crush-state");
+        const storedHigh = localStorage.getItem("sand-crush-high");
+        const storedAudio = localStorage.getItem("sand-crush-audio");
+        if (storedHigh) highScore = Number(storedHigh) || 0;
+        if (storedAudio) audioEnabled = storedAudio === "1";
+        if (!stored) return false;
+
+        const data = JSON.parse(stored);
+        levelIndex = data.levelIndex ?? 0;
+        score = data.score ?? 0;
+        buildLevel(levelIndex);
+        collected = data.collected || { red: 0, blue: 0, green: 0 };
+
+        if (data.sand) {
+          const rows = data.sand.split("|");
+          rows.forEach((row, y) => {
+            if (!sandGrid[y]) return;
+            for (let x = 0; x < row.length; x += 1) {
+              sandGrid[y][x] = Number(row[x]) || 0;
+            }
+          });
+        }
+
+        if (data.gates) {
+          data.gates.forEach(([key, open]) => gates.set(key, open));
+        }
+
+        return true;
+      }
+
+      function resetLevel() {
+        buildLevel(levelIndex);
+        running = false;
+        saveState();
+        updateUI();
+      }
+
+      function fullReset() {
+        localStorage.removeItem("sand-crush-state");
+        localStorage.removeItem("sand-crush-high");
+        localStorage.removeItem("sand-crush-audio");
+        highScore = 0;
+        score = 0;
+        levelIndex = 0;
+        buildLevel(levelIndex);
+        updateUI();
+        showOverlay("Progress cleared. Tap Start to play.");
+      }
+
+      // --- Audio system: lightweight WebAudio ---
+      function ensureAudio() {
+        if (!audioEnabled) return;
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (!backgroundHandle) {
+          startBackgroundLoop();
+        }
+      }
+
+      function startBackgroundLoop() {
+        if (!audioContext) return;
+        const notes = [220, 246.94, 196, 261.63];
+        let step = 0;
+        backgroundHandle = setInterval(() => {
+          if (!audioEnabled) return;
+          playTone(notes[step % notes.length], 0.2, 0.06);
+          step += 1;
+        }, 700);
+      }
+
+      function playTone(freq, duration, volume) {
+        if (!audioContext) return;
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.frequency.value = freq;
+        osc.type = "sine";
+        gain.gain.value = volume;
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start();
+        osc.stop(audioContext.currentTime + duration);
+      }
+
+      function playEffect(type) {
+        if (!audioEnabled) return;
+        ensureAudio();
+        if (type === "click") playTone(520, 0.05, 0.08);
+        if (type === "collect") playTone(640, 0.08, 0.1);
+        if (type === "success") playTone(880, 0.2, 0.12);
+        if (type === "fail") playTone(160, 0.25, 0.12);
+        if (type === "fall") playTone(340, 0.03, 0.04);
+      }
+
+      // --- Service worker: offline after first load ---
+      function registerServiceWorker() {
+        if (!("serviceWorker" in navigator)) return;
+        const swCode = `
+          const CACHE_NAME = "sand-crush-cache-v1";
+          self.addEventListener("install", (event) => {
+            event.waitUntil(
+              caches.open(CACHE_NAME).then((cache) => cache.addAll(["./"]))
+            );
+          });
+          self.addEventListener("fetch", (event) => {
+            event.respondWith(
+              caches.match(event.request).then((response) => response || fetch(event.request))
+            );
+          });
+        `;
+        const blob = new Blob([swCode], { type: "text/javascript" });
+        const swUrl = URL.createObjectURL(blob);
+        navigator.serviceWorker.register(swUrl);
+      }
+
+      // --- UI handlers ---
+      function updateUI() {
+        levelLabel.textContent = `${levelIndex + 1} - ${LEVELS[levelIndex].name}`;
+        scoreLabel.textContent = String(score);
+        highScore = Math.max(highScore, score);
+        highScoreLabel.textContent = String(highScore);
+        audioLabel.textContent = audioEnabled ? "On" : "Off";
+      }
+
+      function showOverlay(message) {
+        overlayText.textContent = message;
+        overlay.classList.add("show");
+      }
+
+      function hideOverlay() {
+        overlay.classList.remove("show");
+      }
+
+      function startGame() {
+        hideOverlay();
+        running = true;
+        ensureAudio();
+        updateUI();
+      }
+
+      // --- Main loop ---
+      function tick(timestamp) {
+        if (!lastTick) lastTick = timestamp;
+        const delta = timestamp - lastTick;
+        if (delta > 16) {
+          lastTick = timestamp;
+          if (running) {
+            spawnSand();
+            updateSand();
+            saveCooldown += delta;
+            if (saveCooldown > 1200) {
+              saveCooldown = 0;
+              saveState();
+            }
+          }
+          render();
+          frame += 1;
+        }
+        requestAnimationFrame(tick);
+      }
+
+      function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cellSize = Math.floor(
+          Math.min(window.innerWidth / GRID_WIDTH, window.innerHeight / GRID_HEIGHT)
+        );
+        offsetX = Math.floor((window.innerWidth - GRID_WIDTH * cellSize) / 2);
+        offsetY = Math.floor((window.innerHeight - GRID_HEIGHT * cellSize) / 2);
+      }
+
+      // --- Event wiring ---
+      canvas.addEventListener("touchstart", handlePointer, { passive: true });
+      canvas.addEventListener("mousedown", handlePointer);
+      startBtn.addEventListener("click", () => {
+        playEffect("click");
+        startGame();
+      });
+      overlayBtn.addEventListener("click", () => {
+        playEffect("click");
+        startGame();
+      });
+      resetBtn.addEventListener("click", () => {
+        playEffect("click");
+        resetLevel();
+        showOverlay("Level reset. Tap Start to play.");
+      });
+      fullResetBtn.addEventListener("click", () => {
+        playEffect("click");
+        fullReset();
+      });
+      audioBtn.addEventListener("click", () => {
+        audioEnabled = !audioEnabled;
+        if (!audioEnabled && backgroundHandle) {
+          clearInterval(backgroundHandle);
+          backgroundHandle = null;
+        }
+        if (audioEnabled) ensureAudio();
+        updateUI();
+        saveState();
+      });
+      window.addEventListener("resize", resize);
+
+      // --- Boot ---
+      resize();
+      buildLevel(levelIndex);
+      const restored = loadState();
+      updateUI();
+      registerServiceWorker();
+      showOverlay(
+        restored
+          ? "Welcome back! Tap Start to continue your saved session."
+          : "Guide each sand color into the matching container. Tap gates or barriers to shape the flow."
+      );
+      requestAnimationFrame(tick);
+    </script>
+  </body>
+</html>
