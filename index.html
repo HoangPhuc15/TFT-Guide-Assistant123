@@ -256,8 +256,8 @@
           allowMix: false,
           targets: { red: 120, blue: 120, green: 0 },
           sources: [
-            { x: 20, y: 8, color: COLOR_MAP.red, rate: 2 },
-            { x: 90, y: 8, color: COLOR_MAP.blue, rate: 2 },
+            { x: 20, y: 8, color: COLOR_MAP.red, rate: 2, amount: 200 },
+            { x: 90, y: 8, color: COLOR_MAP.blue, rate: 2, amount: 200 },
           ],
           solids: [
             { type: "rect", x: 0, y: 0, w: 120, h: 4 },
@@ -279,9 +279,9 @@
           allowMix: false,
           targets: { red: 100, blue: 100, green: 100 },
           sources: [
-            { x: 15, y: 10, color: COLOR_MAP.red, rate: 2 },
-            { x: 60, y: 10, color: COLOR_MAP.green, rate: 2 },
-            { x: 105, y: 10, color: COLOR_MAP.blue, rate: 2 },
+            { x: 15, y: 10, color: COLOR_MAP.red, rate: 2, amount: 180 },
+            { x: 60, y: 10, color: COLOR_MAP.green, rate: 2, amount: 180 },
+            { x: 105, y: 10, color: COLOR_MAP.blue, rate: 2, amount: 180 },
           ],
           solids: [
             { type: "rect", x: 0, y: 0, w: 120, h: 4 },
@@ -310,9 +310,9 @@
           allowMix: true,
           targets: { red: 160, blue: 160, green: 160 },
           sources: [
-            { x: 15, y: 8, color: COLOR_MAP.red, rate: 3 },
-            { x: 60, y: 8, color: COLOR_MAP.green, rate: 3 },
-            { x: 105, y: 8, color: COLOR_MAP.blue, rate: 3 },
+            { x: 15, y: 8, color: COLOR_MAP.red, rate: 3, amount: 220 },
+            { x: 60, y: 8, color: COLOR_MAP.green, rate: 3, amount: 220 },
+            { x: 105, y: 8, color: COLOR_MAP.blue, rate: 3, amount: 220 },
           ],
           solids: [
             { type: "rect", x: 0, y: 0, w: 120, h: 4 },
@@ -437,6 +437,7 @@
         if (colorName === "blue") collected.blue += 1;
         if (colorName === "green") collected.green += 1;
         score += 1;
+        highScore = Math.max(highScore, score);
         playEffect("collect");
         updateUI();
         checkWin();
@@ -598,6 +599,7 @@
 
       // --- Input: tap to remove barrier or toggle gate ---
       function handlePointer(event) {
+        if (overlay.classList.contains("show")) return;
         if (!running) return;
         const rect = canvas.getBoundingClientRect();
         const clientX = event.touches ? event.touches[0].clientX : event.clientX;
@@ -624,11 +626,13 @@
       // --- Sand sources ---
       function spawnSand() {
         sources.forEach((source) => {
+          if (source.amount !== undefined && source.amount <= 0) return;
           if (Math.random() * 10 < source.rate) {
             const x = source.x;
             const y = source.y;
             if (inBounds(x, y) && sandGrid[y][x] === COLOR_MAP.empty) {
               sandGrid[y][x] = source.color;
+              if (source.amount !== undefined) source.amount -= 1;
             }
           }
         });
@@ -637,11 +641,16 @@
       // --- Save/load system ---
       function saveState() {
         const state = {
+          version: 2,
           levelIndex,
           score,
           collected,
-          sand: sandGrid.map((row) => row.join("")).join("|"),
+          allowMix,
+          sandGrid,
+          baseGrid,
           gates: Array.from(gates.entries()),
+          sources,
+          levelTargets,
         };
         localStorage.setItem("sand-crush-state", JSON.stringify(state));
         localStorage.setItem("sand-crush-high", String(highScore));
@@ -655,26 +664,29 @@
         if (storedHigh) highScore = Number(storedHigh) || 0;
         if (storedAudio) audioEnabled = storedAudio === "1";
         if (!stored) return false;
+        let data;
+        try {
+          data = JSON.parse(stored);
+        } catch {
+          return false;
+        }
 
-        const data = JSON.parse(stored);
         levelIndex = data.levelIndex ?? 0;
         score = data.score ?? 0;
         buildLevel(levelIndex);
         collected = data.collected || { red: 0, blue: 0, green: 0 };
+        allowMix = !!data.allowMix;
 
-        if (data.sand) {
-          const rows = data.sand.split("|");
-          rows.forEach((row, y) => {
-            if (!sandGrid[y]) return;
-            for (let x = 0; x < row.length; x += 1) {
-              sandGrid[y][x] = Number(row[x]) || 0;
-            }
-          });
+        if (Array.isArray(data.baseGrid)) baseGrid = data.baseGrid;
+        if (Array.isArray(data.sandGrid)) sandGrid = data.sandGrid;
+
+        if (Array.isArray(data.gates)) {
+          gates = new Map();
+          data.gates.forEach(([key, open]) => gates.set(key, !!open));
         }
 
-        if (data.gates) {
-          data.gates.forEach(([key, open]) => gates.set(key, open));
-        }
+        if (Array.isArray(data.sources)) sources = data.sources;
+        if (data.levelTargets) levelTargets = data.levelTargets;
 
         return true;
       }
@@ -696,6 +708,7 @@
         buildLevel(levelIndex);
         updateUI();
         showOverlay("Progress cleared. Tap Start to play.");
+        saveState();
       }
 
       // --- Audio system: lightweight WebAudio ---
@@ -768,7 +781,6 @@
       function updateUI() {
         levelLabel.textContent = `${levelIndex + 1} - ${LEVELS[levelIndex].name}`;
         scoreLabel.textContent = String(score);
-        highScore = Math.max(highScore, score);
         highScoreLabel.textContent = String(highScore);
         audioLabel.textContent = audioEnabled ? "On" : "Off";
       }
