@@ -3,23 +3,23 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Sand Crush Mobile</title>
+    <title>Sand Crush Drop</title>
     <style>
       :root {
         color-scheme: dark;
-        --bg: #0b1020;
-        --panel: #151b2f;
-        --accent: #67d4ff;
-        --text: #f2f6ff;
-        --muted: #98a2c3;
-        --danger: #ff6b6b;
-        --success: #2ee59d;
+        --bg: #081226;
+        --panel: rgba(17, 26, 48, 0.9);
+        --text: #f4f7ff;
+        --muted: #9aa6c6;
+        --accent: #6cf6ff;
+        --glow: 0 0 22px rgba(108, 246, 255, 0.2);
       }
 
       * {
         box-sizing: border-box;
-        touch-action: manipulation;
         user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: none;
       }
 
       html,
@@ -27,16 +27,15 @@
         margin: 0;
         padding: 0;
         height: 100%;
+        background: radial-gradient(circle at top, #10204b 0%, #081226 70%);
         font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-        background: var(--bg);
         color: var(--text);
       }
 
-      #game {
+      canvas {
         display: block;
         width: 100vw;
         height: 100vh;
-        background: radial-gradient(circle at top, #1c2450 0%, #0b1020 70%);
       }
 
       .ui {
@@ -44,7 +43,7 @@
         top: 0;
         left: 0;
         width: 100%;
-        padding: 12px 14px;
+        padding: 12px 12px 0;
         display: flex;
         flex-direction: column;
         gap: 10px;
@@ -52,73 +51,65 @@
       }
 
       .panel {
+        background: var(--panel);
+        border-radius: 14px;
+        padding: 10px 12px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 8px;
-        background: rgba(21, 27, 47, 0.85);
-        padding: 10px 12px;
-        border-radius: 14px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        gap: 12px;
+        box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
         pointer-events: auto;
       }
 
-      .stats {
+      .stat {
         display: flex;
         flex-direction: column;
         gap: 2px;
-        font-size: 13px;
+        font-size: 12px;
       }
 
-      .stats span {
-        color: var(--muted);
-      }
-
-      .stats strong {
-        color: var(--text);
+      .stat strong {
         font-size: 15px;
       }
 
-      .buttons {
+      .controls {
         display: grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(5, minmax(0, 1fr));
         gap: 8px;
       }
 
       button {
-        appearance: none;
         border: none;
         border-radius: 12px;
-        padding: 10px 12px;
+        padding: 10px 8px;
         font-weight: 600;
-        color: #08101f;
-        background: linear-gradient(135deg, #67d4ff, #8df7c5);
-        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25);
-        font-size: 14px;
+        background: linear-gradient(135deg, #58d6ff, #7ef6c8);
+        color: #0a1020;
+        box-shadow: var(--glow);
+        font-size: 13px;
       }
 
       button.secondary {
-        background: linear-gradient(135deg, #3c466b, #4b5a8f);
+        background: linear-gradient(135deg, #303d68, #3b4f87);
         color: var(--text);
       }
 
       button.danger {
-        background: linear-gradient(135deg, #ff6b6b, #ff9c6b);
+        background: linear-gradient(135deg, #ff6b6b, #ffa56b);
       }
 
       #overlay {
         position: fixed;
         inset: 0;
         display: flex;
-        flex-direction: column;
-        justify-content: center;
         align-items: center;
-        padding: 24px;
-        text-align: center;
-        background: rgba(6, 10, 20, 0.72);
+        justify-content: center;
+        padding: 20px;
+        background: rgba(5, 9, 20, 0.7);
         opacity: 0;
         pointer-events: none;
-        transition: opacity 0.3s ease;
+        transition: opacity 0.25s ease;
       }
 
       #overlay.show {
@@ -126,57 +117,74 @@
         pointer-events: auto;
       }
 
+      #overlay .card {
+        background: rgba(15, 24, 44, 0.95);
+        padding: 24px;
+        border-radius: 18px;
+        max-width: 320px;
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+      }
+
       #overlay h1 {
-        margin: 0 0 12px;
-        font-size: 28px;
+        margin: 0 0 8px;
+        font-size: 26px;
       }
 
       #overlay p {
-        margin: 0 0 18px;
+        margin: 0 0 16px;
         color: var(--muted);
         line-height: 1.5;
       }
 
-      #overlay .card {
-        background: rgba(21, 27, 47, 0.92);
-        padding: 22px;
-        border-radius: 16px;
-        max-width: 320px;
+      #preview {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.05);
+        display: grid;
+        place-items: center;
+        box-shadow: inset 0 0 16px rgba(255, 255, 255, 0.08);
+      }
+
+      #preview canvas {
+        width: 42px;
+        height: 42px;
       }
 
       @media (min-width: 720px) {
         .ui {
-          max-width: 420px;
+          max-width: 440px;
           left: 16px;
         }
       }
     </style>
   </head>
   <body>
-    <canvas id="game" aria-label="Sand Crush game canvas"></canvas>
+    <canvas id="game" aria-label="Sand Crush Drop game canvas"></canvas>
 
     <div class="ui">
       <div class="panel">
-        <div class="stats">
-          <span>Level</span>
-          <strong id="levelLabel">1</strong>
-        </div>
-        <div class="stats">
+        <div class="stat">
           <span>Score</span>
           <strong id="scoreLabel">0</strong>
         </div>
-        <div class="stats">
-          <span>Highest</span>
+        <div class="stat">
+          <span>High</span>
           <strong id="highScoreLabel">0</strong>
         </div>
-        <div class="stats">
+        <div class="stat">
           <span>Audio</span>
           <strong id="audioLabel">On</strong>
         </div>
+        <div class="stat" style="align-items: center;">
+          <span>Next</span>
+          <div id="preview"><canvas id="previewCanvas" width="42" height="42"></canvas></div>
+        </div>
       </div>
-
-      <div class="panel buttons">
+      <div class="panel controls">
         <button id="startBtn">Start</button>
+        <button id="rotateBtn" class="secondary">Rotate</button>
         <button id="audioBtn" class="secondary">Audio</button>
         <button id="resetBtn" class="secondary">Reset</button>
         <button id="fullResetBtn" class="danger">Full Reset</button>
@@ -185,484 +193,160 @@
 
     <div id="overlay">
       <div class="card">
-        <h1>Sand Crush</h1>
+        <h1>Sand Crush Drop</h1>
         <p id="overlayText">
-          Guide each sand color into the matching container. Tap gates to open, tap barriers to remove.
+          Drag the block left/right, release to drop. A row clears only when it is full and all sand matches in
+          color. Keep sand below the danger line.
         </p>
-        <button id="overlayBtn">Start Game</button>
+        <button id="overlayBtn">Play</button>
       </div>
     </div>
 
     <script>
-      // --- Core configuration ---
-      const GRID_WIDTH = 120;
-      const GRID_HEIGHT = 180;
-      const COLOR_MAP = {
-        empty: 0,
-        solid: 1,
-        red: 2,
-        blue: 3,
-        green: 4,
-        containerRed: 5,
-        containerBlue: 6,
-        containerGreen: 7,
-      };
-
+      // --- Game constants ---
+      const GRID_WIDTH = 80;
+      const GRID_HEIGHT = 140;
+      const DANGER_LINE = 10;
       const SAND_COLORS = [
-        { id: COLOR_MAP.red, rgb: "#ff6b6b" },
-        { id: COLOR_MAP.blue, rgb: "#67d4ff" },
-        { id: COLOR_MAP.green, rgb: "#2ee59d" },
+        { id: 1, value: "#ff6b6b" },
+        { id: 2, value: "#6cf6ff" },
+        { id: 3, value: "#7ef6c8" },
+        { id: 4, value: "#ffb86b" },
+      ];
+
+      const SHAPES = [
+        [
+          [1, 1, 1],
+          [0, 1, 0],
+          [0, 0, 0],
+        ],
+        [
+          [1, 1, 0],
+          [0, 1, 1],
+          [0, 0, 0],
+        ],
+        [
+          [1, 1, 1],
+          [0, 0, 1],
+          [0, 0, 0],
+        ],
+        [
+          [1, 1],
+          [1, 1],
+        ],
       ];
 
       const canvas = document.getElementById("game");
       const ctx = canvas.getContext("2d");
+      const previewCanvas = document.getElementById("previewCanvas");
+      const previewCtx = previewCanvas.getContext("2d");
+
       const overlay = document.getElementById("overlay");
       const overlayText = document.getElementById("overlayText");
       const overlayBtn = document.getElementById("overlayBtn");
       const startBtn = document.getElementById("startBtn");
+      const rotateBtn = document.getElementById("rotateBtn");
+      const audioBtn = document.getElementById("audioBtn");
       const resetBtn = document.getElementById("resetBtn");
       const fullResetBtn = document.getElementById("fullResetBtn");
-      const levelLabel = document.getElementById("levelLabel");
       const scoreLabel = document.getElementById("scoreLabel");
       const highScoreLabel = document.getElementById("highScoreLabel");
       const audioLabel = document.getElementById("audioLabel");
-      const audioBtn = document.getElementById("audioBtn");
 
       let cellSize = 4;
       let offsetX = 0;
       let offsetY = 0;
       let running = false;
-      let frame = 0;
-      let lastTick = 0;
-      let levelIndex = 0;
       let score = 0;
       let highScore = 0;
-      let allowMix = false;
-      let levelTargets = { red: 120, blue: 120, green: 120 };
-      let collected = { red: 0, blue: 0, green: 0 };
-      let saveCooldown = 0;
-      let gates = new Map();
-      let sources = [];
-      let baseGrid = [];
-      let sandGrid = [];
+      let grid = createGrid();
+      let currentPiece = null;
+      let nextPiece = null;
+      let isDropping = false;
+      let dragOffset = 0;
       let audioEnabled = true;
-      let backgroundHandle = null;
       let audioContext = null;
+      let backgroundHandle = null;
+      let lastTime = 0;
 
-      // --- Level structure (obstacles, sources, gates, targets) ---
-      const LEVELS = [
-        {
-          name: "Crystalline Valley",
-          allowMix: false,
-          targets: { red: 120, blue: 120, green: 0 },
-          sources: [
-            { x: 20, y: 8, color: COLOR_MAP.red, rate: 2, amount: 200 },
-            { x: 90, y: 8, color: COLOR_MAP.blue, rate: 2, amount: 200 },
-          ],
-          solids: [
-            { type: "rect", x: 0, y: 0, w: 120, h: 4 },
-            { type: "rect", x: 0, y: 0, w: 4, h: 180 },
-            { type: "rect", x: 116, y: 0, w: 4, h: 180 },
-            { type: "rect", x: 0, y: 176, w: 120, h: 4 },
-            { type: "triangle", x: 30, y: 40, w: 30, h: 20, dir: "down-right" },
-            { type: "triangle", x: 60, y: 40, w: 30, h: 20, dir: "down-left" },
-            { type: "rect", x: 48, y: 70, w: 24, h: 6 },
-          ],
-          containers: [
-            { color: COLOR_MAP.containerRed, x: 8, y: 160, w: 36, h: 10 },
-            { color: COLOR_MAP.containerBlue, x: 76, y: 160, w: 36, h: 10 },
-          ],
-          gates: [{ x: 56, y: 76 }],
-        },
-        {
-          name: "Jade Switchbacks",
-          allowMix: false,
-          targets: { red: 100, blue: 100, green: 100 },
-          sources: [
-            { x: 15, y: 10, color: COLOR_MAP.red, rate: 2, amount: 180 },
-            { x: 60, y: 10, color: COLOR_MAP.green, rate: 2, amount: 180 },
-            { x: 105, y: 10, color: COLOR_MAP.blue, rate: 2, amount: 180 },
-          ],
-          solids: [
-            { type: "rect", x: 0, y: 0, w: 120, h: 4 },
-            { type: "rect", x: 0, y: 0, w: 4, h: 180 },
-            { type: "rect", x: 116, y: 0, w: 4, h: 180 },
-            { type: "rect", x: 0, y: 176, w: 120, h: 4 },
-            { type: "rect", x: 16, y: 30, w: 88, h: 6 },
-            { type: "triangle", x: 20, y: 36, w: 30, h: 22, dir: "down-right" },
-            { type: "triangle", x: 70, y: 36, w: 30, h: 22, dir: "down-left" },
-            { type: "rect", x: 44, y: 70, w: 32, h: 6 },
-            { type: "rect", x: 20, y: 100, w: 80, h: 6 },
-          ],
-          containers: [
-            { color: COLOR_MAP.containerRed, x: 6, y: 156, w: 34, h: 12 },
-            { color: COLOR_MAP.containerGreen, x: 44, y: 156, w: 32, h: 12 },
-            { color: COLOR_MAP.containerBlue, x: 80, y: 156, w: 34, h: 12 },
-          ],
-          gates: [
-            { x: 58, y: 76 },
-            { x: 26, y: 106 },
-            { x: 90, y: 106 },
-          ],
-        },
-        {
-          name: "Aurora Mixer",
-          allowMix: true,
-          targets: { red: 160, blue: 160, green: 160 },
-          sources: [
-            { x: 15, y: 8, color: COLOR_MAP.red, rate: 3, amount: 220 },
-            { x: 60, y: 8, color: COLOR_MAP.green, rate: 3, amount: 220 },
-            { x: 105, y: 8, color: COLOR_MAP.blue, rate: 3, amount: 220 },
-          ],
-          solids: [
-            { type: "rect", x: 0, y: 0, w: 120, h: 4 },
-            { type: "rect", x: 0, y: 0, w: 4, h: 180 },
-            { type: "rect", x: 116, y: 0, w: 4, h: 180 },
-            { type: "rect", x: 0, y: 176, w: 120, h: 4 },
-            { type: "triangle", x: 15, y: 35, w: 35, h: 30, dir: "down-right" },
-            { type: "triangle", x: 70, y: 35, w: 35, h: 30, dir: "down-left" },
-            { type: "rect", x: 48, y: 70, w: 24, h: 6 },
-            { type: "rect", x: 20, y: 100, w: 80, h: 6 },
-            { type: "rect", x: 52, y: 126, w: 16, h: 6 },
-          ],
-          containers: [
-            { color: COLOR_MAP.containerRed, x: 6, y: 156, w: 32, h: 12 },
-            { color: COLOR_MAP.containerGreen, x: 44, y: 156, w: 32, h: 12 },
-            { color: COLOR_MAP.containerBlue, x: 82, y: 156, w: 32, h: 12 },
-          ],
-          gates: [{ x: 58, y: 76 }],
-        },
-      ];
-
-      // --- Utility: grid helpers ---
-      function createGrid(value) {
-        const grid = new Array(GRID_HEIGHT);
-        for (let y = 0; y < GRID_HEIGHT; y += 1) {
-          grid[y] = new Array(GRID_WIDTH).fill(value);
-        }
-        return grid;
+      // --- Utilities ---
+      function createGrid() {
+        return Array.from({ length: GRID_HEIGHT }, () => new Array(GRID_WIDTH).fill(0));
       }
 
       function inBounds(x, y) {
         return x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT;
       }
 
-      // --- Physics logic: cellular sand simulation ---
-      function updateSand() {
-        let moved = 0;
-        const direction = frame % 2 === 0 ? 1 : -1;
-        for (let y = GRID_HEIGHT - 2; y >= 0; y -= 1) {
-          const startX = direction === 1 ? 0 : GRID_WIDTH - 1;
-          const endX = direction === 1 ? GRID_WIDTH : -1;
-          for (let x = startX; x !== endX; x += direction) {
-            const sand = sandGrid[y][x];
-            if (sand === COLOR_MAP.empty) continue;
-
-            const below = y + 1;
-            if (!inBounds(x, below)) continue;
-
-            if (isContainer(x, below)) {
-              collectSand(sand, x, below);
-              sandGrid[y][x] = COLOR_MAP.empty;
-              continue;
-            }
-
-            if (canFallTo(x, below)) {
-              sandGrid[below][x] = sand;
-              sandGrid[y][x] = COLOR_MAP.empty;
-              moved += 1;
-              continue;
-            }
-
-            const left = x - 1;
-            const right = x + 1;
-            if (inBounds(left, below) && canFallTo(left, below)) {
-              sandGrid[below][left] = sand;
-              sandGrid[y][x] = COLOR_MAP.empty;
-              moved += 1;
-              continue;
-            }
-            if (inBounds(right, below) && canFallTo(right, below)) {
-              sandGrid[below][right] = sand;
-              sandGrid[y][x] = COLOR_MAP.empty;
-              moved += 1;
-            }
+      function rotateMatrix(matrix) {
+        const size = matrix.length;
+        const result = Array.from({ length: size }, () => new Array(size).fill(0));
+        for (let y = 0; y < size; y += 1) {
+          for (let x = 0; x < size; x += 1) {
+            result[x][size - 1 - y] = matrix[y][x];
           }
         }
-        if (moved > 0 && frame % 6 === 0) {
-          playEffect("fall");
-        }
+        return result;
       }
 
-      function canFallTo(x, y) {
-        if (!inBounds(x, y)) return false;
-        if (sandGrid[y][x] !== COLOR_MAP.empty) return false;
-        if (baseGrid[y][x] === COLOR_MAP.solid) return false;
-        if (isGateClosed(x, y)) return false;
-        if (isContainer(x, y)) return true;
-        return baseGrid[y][x] === COLOR_MAP.empty;
+      function pickColor() {
+        return SAND_COLORS[Math.floor(Math.random() * SAND_COLORS.length)];
       }
 
-      function isContainer(x, y) {
-        return (
-          baseGrid[y][x] === COLOR_MAP.containerRed ||
-          baseGrid[y][x] === COLOR_MAP.containerBlue ||
-          baseGrid[y][x] === COLOR_MAP.containerGreen
-        );
+      function createPiece() {
+        const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+        const color = pickColor();
+        return {
+          shape: shape.map((row) => row.slice()),
+          color,
+          x: Math.floor(GRID_WIDTH / 2) - 1,
+          y: 2,
+        };
       }
 
-      function isGateClosed(x, y) {
-        return gates.has(`${x},${y}`) && !gates.get(`${x},${y}`);
-      }
-
-      function collectSand(sand, x, y) {
-        const container = baseGrid[y][x];
-        const colorName =
-          sand === COLOR_MAP.red ? "red" : sand === COLOR_MAP.blue ? "blue" : "green";
-        const containerName =
-          container === COLOR_MAP.containerRed
-            ? "red"
-            : container === COLOR_MAP.containerBlue
-            ? "blue"
-            : "green";
-
-        if (!allowMix && colorName !== containerName) {
-          playEffect("fail");
-          showOverlay("Wrong container! Level reset.");
-          resetLevel();
-          return;
-        }
-
-        if (colorName === "red") collected.red += 1;
-        if (colorName === "blue") collected.blue += 1;
-        if (colorName === "green") collected.green += 1;
-        score += 1;
-        highScore = Math.max(highScore, score);
-        playEffect("collect");
-        updateUI();
-        checkWin();
-      }
-
-      function checkWin() {
-        const targetRed = levelTargets.red || 0;
-        const targetBlue = levelTargets.blue || 0;
-        const targetGreen = levelTargets.green || 0;
-        if (
-          collected.red >= targetRed &&
-          collected.blue >= targetBlue &&
-          collected.green >= targetGreen
-        ) {
-          playEffect("success");
-          showOverlay("Level complete! Tap Start to continue.");
-          running = false;
-          levelIndex = (levelIndex + 1) % LEVELS.length;
-          saveState();
-        }
-      }
-
-      // --- Level building ---
-      function buildLevel(index) {
-        const level = LEVELS[index];
-        allowMix = level.allowMix;
-        levelTargets = level.targets;
-        sources = level.sources;
-        collected = { red: 0, blue: 0, green: 0 };
-        baseGrid = createGrid(COLOR_MAP.empty);
-        sandGrid = createGrid(COLOR_MAP.empty);
-        gates = new Map();
-
-        level.solids.forEach((shape) => {
-          if (shape.type === "rect") {
-            fillRect(shape.x, shape.y, shape.w, shape.h, COLOR_MAP.solid);
-          }
-          if (shape.type === "triangle") {
-            fillTriangle(shape);
-          }
+      // --- Persistence (base64 packed grid) ---
+      function packGrid(data) {
+        const flat = data.flat();
+        const bytes = new Uint8Array(flat.length);
+        for (let i = 0; i < flat.length; i += 1) bytes[i] = flat[i];
+        let binary = "";
+        bytes.forEach((byte) => {
+          binary += String.fromCharCode(byte);
         });
-
-        level.containers.forEach((container) => {
-          fillRect(container.x, container.y, container.w, container.h, container.color);
-        });
-
-        level.gates.forEach((gate) => {
-          gates.set(`${gate.x},${gate.y}`, false);
-        });
+        return btoa(binary);
       }
 
-      function fillRect(x, y, w, h, value) {
-        for (let iy = y; iy < y + h; iy += 1) {
-          for (let ix = x; ix < x + w; ix += 1) {
-            if (inBounds(ix, iy)) baseGrid[iy][ix] = value;
-          }
-        }
-      }
-
-      function fillTriangle(shape) {
-        const { x, y, w, h, dir } = shape;
-        for (let iy = 0; iy < h; iy += 1) {
-          const rowWidth = Math.floor(((iy + 1) / h) * w);
-          for (let ix = 0; ix < rowWidth; ix += 1) {
-            let px = x + ix;
-            if (dir === "down-left") px = x + (w - rowWidth) + ix;
-            const py = y + iy;
-            if (inBounds(px, py)) baseGrid[py][px] = COLOR_MAP.solid;
-          }
-        }
-      }
-
-      // --- Rendering ---
-      function render() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        drawBackground();
-
+      function unpackGrid(encoded) {
+        const binary = atob(encoded);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+        const data = createGrid();
+        let index = 0;
         for (let y = 0; y < GRID_HEIGHT; y += 1) {
           for (let x = 0; x < GRID_WIDTH; x += 1) {
-            const base = baseGrid[y][x];
-            if (base === COLOR_MAP.solid) {
-              drawCell(x, y, "#3c466b");
-            } else if (base === COLOR_MAP.containerRed) {
-              drawCell(x, y, "#7a1b1b");
-            } else if (base === COLOR_MAP.containerBlue) {
-              drawCell(x, y, "#0d3c66");
-            } else if (base === COLOR_MAP.containerGreen) {
-              drawCell(x, y, "#0c5037");
-            }
-
-            const sand = sandGrid[y][x];
-            if (sand === COLOR_MAP.red) drawCell(x, y, "#ff6b6b");
-            if (sand === COLOR_MAP.blue) drawCell(x, y, "#67d4ff");
-            if (sand === COLOR_MAP.green) drawCell(x, y, "#2ee59d");
+            data[y][x] = bytes[index] || 0;
+            index += 1;
           }
         }
-
-        gates.forEach((open, key) => {
-          const [x, y] = key.split(",").map(Number);
-          drawGate(x, y, open);
-        });
-
-        drawSources();
+        return data;
       }
 
-      function drawBackground() {
-        ctx.save();
-        ctx.globalAlpha = 0.15;
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.restore();
-      }
-
-      function drawCell(x, y, color) {
-        ctx.fillStyle = color;
-        ctx.fillRect(
-          offsetX + x * cellSize,
-          offsetY + y * cellSize,
-          cellSize,
-          cellSize
-        );
-      }
-
-      function drawGate(x, y, open) {
-        ctx.save();
-        ctx.strokeStyle = open ? "#8df7c5" : "#ffb347";
-        ctx.lineWidth = Math.max(1, cellSize * 0.2);
-        ctx.strokeRect(
-          offsetX + x * cellSize,
-          offsetY + y * cellSize,
-          cellSize,
-          cellSize
-        );
-        ctx.restore();
-      }
-
-      function drawSources() {
-        sources.forEach((source) => {
-          ctx.save();
-          ctx.globalAlpha = 0.8;
-          ctx.fillStyle =
-            source.color === COLOR_MAP.red
-              ? "#ff6b6b"
-              : source.color === COLOR_MAP.blue
-              ? "#67d4ff"
-              : "#2ee59d";
-          ctx.beginPath();
-          ctx.arc(
-            offsetX + source.x * cellSize,
-            offsetY + source.y * cellSize,
-            cellSize * 1.6,
-            0,
-            Math.PI * 2
-          );
-          ctx.fill();
-          ctx.restore();
-        });
-      }
-
-      // --- Input: tap to remove barrier or toggle gate ---
-      function handlePointer(event) {
-        if (overlay.classList.contains("show")) return;
-        if (!running) return;
-        const rect = canvas.getBoundingClientRect();
-        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
-        const clientY = event.touches ? event.touches[0].clientY : event.clientY;
-        const x = Math.floor((clientX - rect.left - offsetX) / cellSize);
-        const y = Math.floor((clientY - rect.top - offsetY) / cellSize);
-        if (!inBounds(x, y)) return;
-
-        const gateKey = `${x},${y}`;
-        if (gates.has(gateKey)) {
-          gates.set(gateKey, !gates.get(gateKey));
-          playEffect("click");
-          saveState();
-          return;
-        }
-
-        if (baseGrid[y][x] === COLOR_MAP.solid) {
-          baseGrid[y][x] = COLOR_MAP.empty;
-          playEffect("click");
-          saveState();
-        }
-      }
-
-      // --- Sand sources ---
-      function spawnSand() {
-        sources.forEach((source) => {
-          if (source.amount !== undefined && source.amount <= 0) return;
-          if (Math.random() * 10 < source.rate) {
-            const x = source.x;
-            const y = source.y;
-            if (inBounds(x, y) && sandGrid[y][x] === COLOR_MAP.empty) {
-              sandGrid[y][x] = source.color;
-              if (source.amount !== undefined) source.amount -= 1;
-            }
-          }
-        });
-      }
-
-      // --- Save/load system ---
       function saveState() {
         const state = {
           version: 2,
-          levelIndex,
           score,
-          collected,
-          allowMix,
-          sandGrid,
-          baseGrid,
-          gates: Array.from(gates.entries()),
-          sources,
-          levelTargets,
+          highScore,
+          grid: packGrid(grid),
+          currentPiece,
+          nextPiece,
+          isDropping,
+          audioEnabled,
         };
-        localStorage.setItem("sand-crush-state", JSON.stringify(state));
-        localStorage.setItem("sand-crush-high", String(highScore));
-        localStorage.setItem("sand-crush-audio", audioEnabled ? "1" : "0");
+        localStorage.setItem("sand-crush-drop", JSON.stringify(state));
       }
 
       function loadState() {
-        const stored = localStorage.getItem("sand-crush-state");
-        const storedHigh = localStorage.getItem("sand-crush-high");
-        const storedAudio = localStorage.getItem("sand-crush-audio");
-        if (storedHigh) highScore = Number(storedHigh) || 0;
-        if (storedAudio) audioEnabled = storedAudio === "1";
+        const stored = localStorage.getItem("sand-crush-drop");
         if (!stored) return false;
         let data;
         try {
@@ -670,75 +354,46 @@
         } catch {
           return false;
         }
-
-        levelIndex = data.levelIndex ?? 0;
-        score = data.score ?? 0;
-        buildLevel(levelIndex);
-        collected = data.collected || { red: 0, blue: 0, green: 0 };
-        allowMix = !!data.allowMix;
-
-        if (Array.isArray(data.baseGrid)) baseGrid = data.baseGrid;
-        if (Array.isArray(data.sandGrid)) sandGrid = data.sandGrid;
-
-        if (Array.isArray(data.gates)) {
-          gates = new Map();
-          data.gates.forEach(([key, open]) => gates.set(key, !!open));
-        }
-
-        if (Array.isArray(data.sources)) sources = data.sources;
-        if (data.levelTargets) levelTargets = data.levelTargets;
-
+        score = data.score || 0;
+        highScore = data.highScore || 0;
+        audioEnabled = data.audioEnabled !== false;
+        grid = data.grid ? unpackGrid(data.grid) : createGrid();
+        currentPiece = data.currentPiece || createPiece();
+        nextPiece = data.nextPiece || createPiece();
+        isDropping = !!data.isDropping;
         return true;
       }
 
-      function resetLevel() {
-        buildLevel(levelIndex);
-        running = false;
+      function resetRun() {
+        grid = createGrid();
+        score = 0;
+        currentPiece = createPiece();
+        nextPiece = createPiece();
+        isDropping = false;
         saveState();
-        updateUI();
       }
 
       function fullReset() {
-        localStorage.removeItem("sand-crush-state");
-        localStorage.removeItem("sand-crush-high");
-        localStorage.removeItem("sand-crush-audio");
+        localStorage.removeItem("sand-crush-drop");
         highScore = 0;
-        score = 0;
-        levelIndex = 0;
-        buildLevel(levelIndex);
-        updateUI();
-        showOverlay("Progress cleared. Tap Start to play.");
-        saveState();
+        resetRun();
       }
 
-      // --- Audio system: lightweight WebAudio ---
+      // --- Audio ---
       function ensureAudio() {
         if (!audioEnabled) return;
         if (!audioContext) {
           audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
-        if (!backgroundHandle) {
-          startBackgroundLoop();
-        }
+        if (!backgroundHandle) startBackground();
       }
 
-      function startBackgroundLoop() {
-        if (!audioContext) return;
-        const notes = [220, 246.94, 196, 261.63];
-        let step = 0;
-        backgroundHandle = setInterval(() => {
-          if (!audioEnabled) return;
-          playTone(notes[step % notes.length], 0.2, 0.06);
-          step += 1;
-        }, 700);
-      }
-
-      function playTone(freq, duration, volume) {
+      function playTone(freq, duration, volume, type = "sine") {
         if (!audioContext) return;
         const osc = audioContext.createOscillator();
         const gain = audioContext.createGain();
         osc.frequency.value = freq;
-        osc.type = "sine";
+        osc.type = type;
         gain.gain.value = volume;
         osc.connect(gain);
         gain.connect(audioContext.destination);
@@ -746,47 +401,258 @@
         osc.stop(audioContext.currentTime + duration);
       }
 
-      function playEffect(type) {
+      function playEffect(name) {
         if (!audioEnabled) return;
         ensureAudio();
-        if (type === "click") playTone(520, 0.05, 0.08);
-        if (type === "collect") playTone(640, 0.08, 0.1);
-        if (type === "success") playTone(880, 0.2, 0.12);
-        if (type === "fail") playTone(160, 0.25, 0.12);
-        if (type === "fall") playTone(340, 0.03, 0.04);
+        if (name === "click") playTone(520, 0.05, 0.08);
+        if (name === "rotate") playTone(680, 0.05, 0.08);
+        if (name === "drop") playTone(240, 0.08, 0.1, "triangle");
+        if (name === "crumble") playTone(180, 0.15, 0.08, "sawtooth");
+        if (name === "clear") playTone(880, 0.2, 0.12);
+        if (name === "gameover") playTone(140, 0.4, 0.12);
       }
 
-      // --- Service worker: offline after first load ---
-      function registerServiceWorker() {
-        if (!("serviceWorker" in navigator)) return;
-        const swCode = `
-          const CACHE_NAME = "sand-crush-cache-v1";
-          self.addEventListener("install", (event) => {
-            event.waitUntil(
-              caches.open(CACHE_NAME).then((cache) => cache.addAll(["./"]))
-            );
-          });
-          self.addEventListener("fetch", (event) => {
-            event.respondWith(
-              caches.match(event.request).then((response) => response || fetch(event.request))
-            );
-          });
-        `;
-        const blob = new Blob([swCode], { type: "text/javascript" });
-        const swUrl = URL.createObjectURL(blob);
-        navigator.serviceWorker.register(swUrl);
+      function startBackground() {
+        const notes = [220, 247, 196, 262];
+        let step = 0;
+        backgroundHandle = setInterval(() => {
+          if (!audioEnabled) return;
+          playTone(notes[step % notes.length], 0.15, 0.04);
+          step += 1;
+        }, 700);
       }
 
-      // --- UI handlers ---
+      // --- Core gameplay ---
+      function canMove(piece, dx, dy) {
+        const shape = piece.shape;
+        for (let y = 0; y < shape.length; y += 1) {
+          for (let x = 0; x < shape[y].length; x += 1) {
+            if (!shape[y][x]) continue;
+            const nx = piece.x + x + dx;
+            const ny = piece.y + y + dy;
+            if (!inBounds(nx, ny)) return false;
+            if (grid[ny][nx] !== 0) return false;
+          }
+        }
+        return true;
+      }
+
+      function mergePiece() {
+        const shape = currentPiece.shape;
+        shape.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value) {
+              const gx = currentPiece.x + x;
+              const gy = currentPiece.y + y;
+              if (inBounds(gx, gy)) grid[gy][gx] = currentPiece.color.id;
+            }
+          });
+        });
+        playEffect("crumble");
+        score += 4;
+        highScore = Math.max(highScore, score);
+        clearRows();
+        spawnNewPiece();
+      }
+
+      function clearRows() {
+        let cleared = 0;
+        for (let y = GRID_HEIGHT - 1; y >= 0; y -= 1) {
+          const row = grid[y];
+          const first = row[0];
+          if (first === 0) continue;
+          let filled = true;
+          for (let x = 0; x < GRID_WIDTH; x += 1) {
+            if (row[x] !== first) {
+              filled = false;
+              break;
+            }
+          }
+          if (filled) {
+            grid.splice(y, 1);
+            grid.unshift(new Array(GRID_WIDTH).fill(0));
+            cleared += 1;
+            y += 1;
+          }
+        }
+        if (cleared > 0) {
+          score += cleared * 50;
+          highScore = Math.max(highScore, score);
+          playEffect("clear");
+        }
+      }
+
+      function spawnNewPiece() {
+        currentPiece = nextPiece;
+        currentPiece.x = Math.floor(GRID_WIDTH / 2) - 1;
+        currentPiece.y = 2;
+        nextPiece = createPiece();
+        isDropping = false;
+        if (hitsDangerLine()) gameOver();
+      }
+
+      function hitsDangerLine() {
+        for (let y = 0; y < DANGER_LINE; y += 1) {
+          for (let x = 0; x < GRID_WIDTH; x += 1) {
+            if (grid[y][x] !== 0) return true;
+          }
+        }
+        return false;
+      }
+
+      function gameOver() {
+        running = false;
+        playEffect("gameover");
+        overlayText.textContent = "Game over. Tap Play to start a new run.";
+        overlay.classList.add("show");
+        saveState();
+      }
+
+      function updateSand() {
+        for (let y = GRID_HEIGHT - 2; y >= 0; y -= 1) {
+          for (let x = 0; x < GRID_WIDTH; x += 1) {
+            if (grid[y][x] === 0) continue;
+            const sand = grid[y][x];
+            if (grid[y + 1][x] === 0) {
+              grid[y + 1][x] = sand;
+              grid[y][x] = 0;
+              continue;
+            }
+            const dir = Math.random() < 0.5 ? -1 : 1;
+            const nx = x + dir;
+            if (nx >= 0 && nx < GRID_WIDTH && grid[y + 1][nx] === 0) {
+              grid[y + 1][nx] = sand;
+              grid[y][x] = 0;
+            }
+          }
+        }
+      }
+
+      function dropStep() {
+        if (!isDropping) return;
+        if (canMove(currentPiece, 0, 1)) {
+          currentPiece.y += 1;
+        } else {
+          mergePiece();
+        }
+      }
+
+      // --- Rendering ---
+      function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "rgba(9, 16, 33, 0.9)";
+        ctx.fillRect(offsetX, offsetY, GRID_WIDTH * cellSize, GRID_HEIGHT * cellSize);
+
+        // Danger line
+        ctx.strokeStyle = "rgba(255, 107, 107, 0.6)";
+        ctx.setLineDash([6, 6]);
+        ctx.strokeRect(
+          offsetX,
+          offsetY + DANGER_LINE * cellSize,
+          GRID_WIDTH * cellSize,
+          1
+        );
+        ctx.setLineDash([]);
+
+        for (let y = 0; y < GRID_HEIGHT; y += 1) {
+          for (let x = 0; x < GRID_WIDTH; x += 1) {
+            const value = grid[y][x];
+            if (value === 0) continue;
+            drawCell(x, y, SAND_COLORS[value - 1].value);
+          }
+        }
+
+        if (currentPiece) {
+          const shape = currentPiece.shape;
+          shape.forEach((row, y) => {
+            row.forEach((value, x) => {
+              if (!value) return;
+              drawCell(currentPiece.x + x, currentPiece.y + y, currentPiece.color.value, 0.9);
+            });
+          });
+        }
+
+        drawPreview();
+      }
+
+      function drawCell(x, y, color, alpha = 1) {
+        ctx.fillStyle = color;
+        ctx.globalAlpha = alpha;
+        ctx.fillRect(
+          offsetX + x * cellSize,
+          offsetY + y * cellSize,
+          cellSize,
+          cellSize
+        );
+        ctx.globalAlpha = 1;
+      }
+
+      function drawPreview() {
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        if (!nextPiece) return;
+        const shape = nextPiece.shape;
+        const size = previewCanvas.width / 4;
+        previewCtx.fillStyle = nextPiece.color.value;
+        shape.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value) {
+              previewCtx.fillRect(x * size, y * size, size, size);
+            }
+          });
+        });
+      }
+
+      // --- Input ---
+      function onPointerDown(event) {
+        if (!running || overlay.classList.contains("show")) return;
+        const rect = canvas.getBoundingClientRect();
+        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+        dragOffset = clientX - rect.left - offsetX - currentPiece.x * cellSize;
+      }
+
+      function onPointerMove(event) {
+        if (!running || overlay.classList.contains("show")) return;
+        if (!currentPiece || isDropping) return;
+        const rect = canvas.getBoundingClientRect();
+        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+        const targetX = Math.floor((clientX - rect.left - offsetX - dragOffset) / cellSize);
+        const clamped = Math.max(0, Math.min(GRID_WIDTH - currentPiece.shape.length, targetX));
+        if (canMove(currentPiece, clamped - currentPiece.x, 0)) {
+          currentPiece.x = clamped;
+        }
+      }
+
+      function onPointerUp() {
+        if (!running || overlay.classList.contains("show")) return;
+        if (currentPiece && !isDropping) {
+          isDropping = true;
+          playEffect("drop");
+        }
+      }
+
+      function rotatePiece() {
+        if (!currentPiece || overlay.classList.contains("show")) return;
+        const rotated = rotateMatrix(currentPiece.shape);
+        const original = currentPiece.shape;
+        currentPiece.shape = rotated;
+        if (!canMove(currentPiece, 0, 0)) {
+          currentPiece.shape = original;
+          return;
+        }
+        playEffect("rotate");
+      }
+
+      // --- UI ---
       function updateUI() {
-        levelLabel.textContent = `${levelIndex + 1} - ${LEVELS[levelIndex].name}`;
         scoreLabel.textContent = String(score);
         highScoreLabel.textContent = String(highScore);
         audioLabel.textContent = audioEnabled ? "On" : "Off";
+        startBtn.textContent = running ? "Pause" : "Start";
       }
 
-      function showOverlay(message) {
+      function showOverlay(message, buttonText) {
         overlayText.textContent = message;
+        overlayBtn.textContent = buttonText || "Play";
         overlay.classList.add("show");
       }
 
@@ -794,30 +660,20 @@
         overlay.classList.remove("show");
       }
 
-      function startGame() {
-        hideOverlay();
-        running = true;
-        ensureAudio();
-        updateUI();
-      }
-
       // --- Main loop ---
       function tick(timestamp) {
-        if (!lastTick) lastTick = timestamp;
-        const delta = timestamp - lastTick;
+        if (!lastTime) lastTime = timestamp;
+        const delta = timestamp - lastTime;
         if (delta > 16) {
-          lastTick = timestamp;
+          lastTime = timestamp;
           if (running) {
-            spawnSand();
+            dropStep();
             updateSand();
-            saveCooldown += delta;
-            if (saveCooldown > 1200) {
-              saveCooldown = 0;
-              saveState();
-            }
+            if (hitsDangerLine()) gameOver();
+            saveState();
           }
           render();
-          frame += 1;
+          updateUI();
         }
         requestAnimationFrame(tick);
       }
@@ -835,25 +691,61 @@
       }
 
       // --- Event wiring ---
-      canvas.addEventListener("touchstart", handlePointer, { passive: true });
-      canvas.addEventListener("mousedown", handlePointer);
+      canvas.addEventListener("touchstart", onPointerDown, { passive: true });
+      canvas.addEventListener("touchmove", onPointerMove, { passive: true });
+      canvas.addEventListener("touchend", onPointerUp, { passive: true });
+      canvas.addEventListener("mousedown", onPointerDown);
+      canvas.addEventListener("mousemove", onPointerMove);
+      canvas.addEventListener("mouseup", onPointerUp);
+
+      rotateBtn.addEventListener("click", () => {
+        rotatePiece();
+        saveState();
+      });
+
       startBtn.addEventListener("click", () => {
         playEffect("click");
-        startGame();
+        if (running) {
+          running = false;
+          showOverlay("Paused. Tap Play to resume.", "Resume");
+        } else {
+          hideOverlay();
+          running = true;
+          ensureAudio();
+        }
       });
+
       overlayBtn.addEventListener("click", () => {
         playEffect("click");
-        startGame();
+        hideOverlay();
+        running = true;
+        ensureAudio();
       });
+
       resetBtn.addEventListener("click", () => {
         playEffect("click");
-        resetLevel();
-        showOverlay("Level reset. Tap Start to play.");
+        resetRun();
+        running = false;
+        showOverlay("Run reset. Tap Play to start.", "Play");
       });
+
       fullResetBtn.addEventListener("click", () => {
         playEffect("click");
         fullReset();
+        running = false;
+        showOverlay("Everything reset. Tap Play to start.", "Play");
       });
+
+      audioLabel.addEventListener("click", () => {
+        audioEnabled = !audioEnabled;
+        if (!audioEnabled && backgroundHandle) {
+          clearInterval(backgroundHandle);
+          backgroundHandle = null;
+        }
+        if (audioEnabled) ensureAudio();
+        saveState();
+      });
+
       audioBtn.addEventListener("click", () => {
         audioEnabled = !audioEnabled;
         if (!audioEnabled && backgroundHandle) {
@@ -861,21 +753,22 @@
           backgroundHandle = null;
         }
         if (audioEnabled) ensureAudio();
-        updateUI();
         saveState();
       });
+
       window.addEventListener("resize", resize);
 
       // --- Boot ---
       resize();
-      buildLevel(levelIndex);
       const restored = loadState();
+      if (!restored) {
+        resetRun();
+      }
       updateUI();
-      registerServiceWorker();
       showOverlay(
         restored
-          ? "Welcome back! Tap Start to continue your saved session."
-          : "Guide each sand color into the matching container. Tap gates or barriers to shape the flow."
+          ? "Welcome back! Drag the block and release to drop."
+          : "Drag the block left/right then release to drop. Clear single-color rows to score."
       );
       requestAnimationFrame(tick);
     </script>
