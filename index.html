@@ -270,7 +270,6 @@
       let audioContext = null;
       let backgroundHandle = null;
       let lastTime = 0;
-      let relaxTimer = 0;
 
       // --- Utilities ---
       function createGrid() {
@@ -691,12 +690,6 @@
         const delta = timestamp - lastTime;
         if (delta > 16) {
           lastTime = timestamp;
-          relaxTimer += delta;
-          if (running && relaxTimer > 80) {
-            relaxSand();
-            relaxTimer = 0;
-            if (hitsDangerLine()) gameOver();
-          }
           render();
           updateUI();
         }
