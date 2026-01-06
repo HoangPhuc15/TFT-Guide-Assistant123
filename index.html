@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>Sand Crush V-Slope</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #3b1f0e;
+        --panel: rgba(86, 52, 26, 0.92);
+        --text: #fff5e1;
+        --muted: #e7caa2;
+        --accent: #ffd47c;
+        --glow: 0 0 20px rgba(255, 212, 124, 0.25);
+      }
+
+      * {
+        box-sizing: border-box;
+        user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: none;
+      }
+
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: radial-gradient(circle at top, #7a4a2a 0%, #3b1f0e 65%);
+        font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+        color: var(--text);
+      }
+
+      canvas {
+        display: block;
+        width: 100vw;
+        height: 100vh;
+      }
+
+      .ui {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        padding: 12px 12px 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        pointer-events: none;
+      }
+
+      .panel {
+        background: linear-gradient(135deg, rgba(88, 52, 26, 0.95), rgba(52, 30, 16, 0.95));
+        border-radius: 14px;
+        padding: 10px 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
+        pointer-events: auto;
+        border: 1px solid rgba(255, 212, 124, 0.2);
+      }
+
+      .stat {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        font-size: 12px;
+      }
+
+      .stat strong {
+        font-size: 15px;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      button {
+        border: none;
+        border-radius: 12px;
+        padding: 10px 8px;
+        font-weight: 600;
+        background: linear-gradient(135deg, #f2c46d, #ffdf9a);
+        color: #3b1f0e;
+        box-shadow: var(--glow);
+        font-size: 13px;
+      }
+
+      button.secondary {
+        background: linear-gradient(135deg, #6b3e1f, #865127);
+        color: #fff1d6;
+      }
+
+      button.danger {
+        background: linear-gradient(135deg, #f05a4f, #ff8e6b);
+      }
+
+      #overlay {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(5, 9, 20, 0.7);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+      }
+
+      #overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      #overlay .card {
+        background: rgba(62, 35, 18, 0.95);
+        padding: 24px;
+        border-radius: 18px;
+        max-width: 320px;
+        text-align: center;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+      }
+
+      #overlay h1 {
+        margin: 0 0 8px;
+        font-size: 26px;
+      }
+
+      #overlay p {
+        margin: 0 0 16px;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      #preview {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.08);
+        display: grid;
+        place-items: center;
+        box-shadow: inset 0 0 16px rgba(255, 255, 255, 0.08);
+      }
+
+      #preview canvas {
+        width: 42px;
+        height: 42px;
+      }
+
+      @media (min-width: 720px) {
+        .ui {
+          max-width: 440px;
+          left: 16px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="game" aria-label="Sand Crush V-Slope canvas"></canvas>
+
+    <div class="ui">
+      <div class="panel">
+        <div class="stat">
+          <span>Score</span>
+          <strong id="scoreLabel">0</strong>
+        </div>
+        <div class="stat">
+          <span>High</span>
+          <strong id="highScoreLabel">0</strong>
+        </div>
+        <div class="stat">
+          <span>Audio</span>
+          <strong id="audioLabel">On</strong>
+        </div>
+        <div class="stat" style="align-items: center;">
+          <span>Next</span>
+          <div id="preview"><canvas id="previewCanvas" width="42" height="42"></canvas></div>
+        </div>
+      </div>
+      <div class="panel controls">
+        <button id="startBtn">Start</button>
+        <button id="rotateBtn" class="secondary">Rotate</button>
+        <button id="audioBtn" class="secondary">Audio</button>
+        <button id="resetBtn" class="secondary">Reset</button>
+        <button id="fullResetBtn" class="danger">Full Reset</button>
+      </div>
+    </div>
+
+    <div id="overlay">
+      <div class="card">
+        <h1>Sand Crush V</h1>
+        <p id="overlayText">
+          Drag the block left/right and release to place. Pieces instantly disintegrate into sand and relax along
+          the V-shaped slopes. Clear a full diagonal layer of the same color.
+        </p>
+        <button id="overlayBtn">Play</button>
+      </div>
+    </div>
+
+    <script>
+      // --- Game constants ---
+      const GRID_WIDTH = 80;
+      const GRID_HEIGHT = 140;
+      const DANGER_LINE = 12;
+      const CENTER_X = Math.floor(GRID_WIDTH / 2);
+      const MAX_LAYER = GRID_HEIGHT + CENTER_X;
+
+      const SAND_COLORS = [
+        { id: 1, value: "#ff6b6b" },
+        { id: 2, value: "#6cf6ff" },
+        { id: 3, value: "#7ef6c8" },
+        { id: 4, value: "#ffb86b" },
+      ];
+
+      const SHAPES = [
+        [
+          [1, 1, 1],
+          [0, 1, 0],
+          [0, 0, 0],
+        ],
+        [
+          [1, 1, 0],
+          [0, 1, 1],
+          [0, 0, 0],
+        ],
+        [
+          [1, 1, 1],
+          [0, 0, 1],
+          [0, 0, 0],
+        ],
+        [
+          [1, 1],
+          [1, 1],
+        ],
+      ];
+
+      const canvas = document.getElementById("game");
+      const ctx = canvas.getContext("2d");
+      const previewCanvas = document.getElementById("previewCanvas");
+      const previewCtx = previewCanvas.getContext("2d");
+
+      const overlay = document.getElementById("overlay");
+      const overlayText = document.getElementById("overlayText");
+      const overlayBtn = document.getElementById("overlayBtn");
+      const startBtn = document.getElementById("startBtn");
+      const rotateBtn = document.getElementById("rotateBtn");
+      const audioBtn = document.getElementById("audioBtn");
+      const resetBtn = document.getElementById("resetBtn");
+      const fullResetBtn = document.getElementById("fullResetBtn");
+      const scoreLabel = document.getElementById("scoreLabel");
+      const highScoreLabel = document.getElementById("highScoreLabel");
+      const audioLabel = document.getElementById("audioLabel");
+
+      let cellSize = 4;
+      let offsetX = 0;
+      let offsetY = 0;
+      let running = false;
+      let score = 0;
+      let highScore = 0;
+      let grid = createGrid();
+      let currentPiece = null;
+      let nextPiece = null;
+      let dragOffset = 0;
+      let audioEnabled = true;
+      let audioContext = null;
+      let backgroundHandle = null;
+      let lastTime = 0;
+
+      // --- Utilities ---
+      function createGrid() {
+        return Array.from({ length: GRID_HEIGHT }, () => new Array(GRID_WIDTH).fill(0));
+      }
+
+      function inBounds(x, y) {
+        return x >= 0 && x < GRID_WIDTH && y >= 0 && y < GRID_HEIGHT;
+      }
+
+      function rotateMatrix(matrix) {
+        const size = matrix.length;
+        const result = Array.from({ length: size }, () => new Array(size).fill(0));
+        for (let y = 0; y < size; y += 1) {
+          for (let x = 0; x < size; x += 1) {
+            result[x][size - 1 - y] = matrix[y][x];
+          }
+        }
+        return result;
+      }
+
+      function pickColor() {
+        return SAND_COLORS[Math.floor(Math.random() * SAND_COLORS.length)];
+      }
+
+      function createPiece() {
+        const shape = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+        const color = pickColor();
+        return {
+          shape: shape.map((row) => row.slice()),
+          color,
+          x: Math.floor(GRID_WIDTH / 2) - 1,
+          y: 1,
+        };
+      }
+
+      // --- Persistence (base64 packed grid) ---
+      function packGrid(data) {
+        const flat = data.flat();
+        const bytes = new Uint8Array(flat.length);
+        for (let i = 0; i < flat.length; i += 1) bytes[i] = flat[i];
+        let binary = "";
+        bytes.forEach((byte) => {
+          binary += String.fromCharCode(byte);
+        });
+        return btoa(binary);
+      }
+
+      function unpackGrid(encoded) {
+        const binary = atob(encoded);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+        const data = createGrid();
+        let index = 0;
+        for (let y = 0; y < GRID_HEIGHT; y += 1) {
+          for (let x = 0; x < GRID_WIDTH; x += 1) {
+            data[y][x] = bytes[index] || 0;
+            index += 1;
+          }
+        }
+        return data;
+      }
+
+      function saveState() {
+        const state = {
+          version: 3,
+          score,
+          highScore,
+          grid: packGrid(grid),
+          currentPiece,
+          nextPiece,
+          audioEnabled,
+        };
+        localStorage.setItem("sand-crush-v", JSON.stringify(state));
+      }
+
+      function loadState() {
+        const stored = localStorage.getItem("sand-crush-v");
+        if (!stored) return false;
+        let data;
+        try {
+          data = JSON.parse(stored);
+        } catch {
+          return false;
+        }
+        score = data.score || 0;
+        highScore = data.highScore || 0;
+        audioEnabled = data.audioEnabled !== false;
+        grid = data.grid ? unpackGrid(data.grid) : createGrid();
+        currentPiece = data.currentPiece || createPiece();
+        nextPiece = data.nextPiece || createPiece();
+        return true;
+      }
+
+      function resetRun() {
+        grid = createGrid();
+        score = 0;
+        currentPiece = createPiece();
+        nextPiece = createPiece();
+        saveState();
+      }
+
+      function fullReset() {
+        localStorage.removeItem("sand-crush-v");
+        highScore = 0;
+        resetRun();
+      }
+
+      // --- Audio ---
+      function ensureAudio() {
+        if (!audioEnabled) return;
+        if (!audioContext) {
+          audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (!backgroundHandle) startBackground();
+      }
+
+      function playTone(freq, duration, volume, type = "sine") {
+        if (!audioContext) return;
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.frequency.value = freq;
+        osc.type = type;
+        gain.gain.value = volume;
+        osc.connect(gain);
+        gain.connect(audioContext.destination);
+        osc.start();
+        osc.stop(audioContext.currentTime + duration);
+      }
+
+      function playEffect(name) {
+        if (!audioEnabled) return;
+        ensureAudio();
+        if (name === "click") playTone(520, 0.05, 0.08);
+        if (name === "rotate") playTone(680, 0.05, 0.08);
+        if (name === "place") playTone(220, 0.06, 0.1, "triangle");
+        if (name === "crumble") playTone(160, 0.12, 0.08, "sawtooth");
+        if (name === "clear") playTone(880, 0.18, 0.12);
+        if (name === "gameover") playTone(140, 0.4, 0.12);
+      }
+
+      function startBackground() {
+        const notes = [220, 247, 196, 262];
+        let step = 0;
+        backgroundHandle = setInterval(() => {
+          if (!audioEnabled) return;
+          playTone(notes[step % notes.length], 0.14, 0.035);
+          step += 1;
+        }, 700);
+      }
+
+      // --- Core gameplay ---
+      function canPlace(piece) {
+        const shape = piece.shape;
+        for (let y = 0; y < shape.length; y += 1) {
+          for (let x = 0; x < shape[y].length; x += 1) {
+            if (!shape[y][x]) continue;
+            const gx = piece.x + x;
+            const gy = piece.y + y;
+            if (!inBounds(gx, gy)) return false;
+            if (grid[gy][gx] !== 0) return false;
+          }
+        }
+        return true;
+      }
+
+      function placePiece() {
+        if (!currentPiece) return;
+        if (!canPlace(currentPiece)) {
+          gameOver();
+          return;
+        }
+        const shape = currentPiece.shape;
+        shape.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (!value) return;
+            const gx = currentPiece.x + x;
+            const gy = currentPiece.y + y;
+            if (inBounds(gx, gy)) grid[gy][gx] = currentPiece.color.id;
+          });
+        });
+        playEffect("place");
+        disintegrateAndRelax();
+        score += 6;
+        highScore = Math.max(highScore, score);
+        clearDiagonalLayers();
+        spawnNewPiece();
+        saveState();
+      }
+
+      // --- Deterministic slope relaxation ---
+      function slopeDirection(x) {
+        return x < CENTER_X ? -1 : 1;
+      }
+
+      function layerIndex(x, y) {
+        return y + Math.abs(x - CENTER_X);
+      }
+
+      function relaxSand() {
+        let moved = false;
+        for (let y = GRID_HEIGHT - 2; y >= 0; y -= 1) {
+          for (let x = 0; x < GRID_WIDTH; x += 1) {
+            const sand = grid[y][x];
+            if (sand === 0) continue;
+            const dir = slopeDirection(x);
+            const nx = x + dir;
+            const ny = y + 1;
+            if (!inBounds(nx, ny)) continue;
+            if (grid[ny][nx] === 0) {
+              grid[ny][nx] = sand;
+              grid[y][x] = 0;
+              moved = true;
+            }
+          }
+        }
+        return moved;
+      }
+
+      function disintegrateAndRelax() {
+        playEffect("crumble");
+        for (let i = 0; i < GRID_HEIGHT; i += 1) {
+          if (!relaxSand()) break;
+        }
+      }
+
+      // --- Clear diagonal layers ---
+      function clearDiagonalLayers() {
+        let cleared = 0;
+        for (let layer = 0; layer <= MAX_LAYER; layer += 1) {
+          let color = 0;
+          let full = true;
+          for (let x = 0; x < GRID_WIDTH; x += 1) {
+            const y = layer - Math.abs(x - CENTER_X);
+            if (y < 0 || y >= GRID_HEIGHT) {
+              full = false;
+              break;
+            }
+            const cell = grid[y][x];
+            if (cell === 0) {
+              full = false;
+              break;
+            }
+            if (color === 0) color = cell;
+            if (cell !== color) {
+              full = false;
+              break;
+            }
+          }
+          if (full && color !== 0) {
+            for (let x = 0; x < GRID_WIDTH; x += 1) {
+              const y = layer - Math.abs(x - CENTER_X);
+              if (y < 0 || y >= GRID_HEIGHT) continue;
+              grid[y][x] = 0;
+            }
+            cleared += 1;
+          }
+        }
+        if (cleared > 0) {
+          score += cleared * 80;
+          highScore = Math.max(highScore, score);
+          playEffect("clear");
+          for (let i = 0; i < GRID_HEIGHT; i += 1) {
+            if (!relaxSand()) break;
+          }
+        }
+      }
+
+      function spawnNewPiece() {
+        currentPiece = nextPiece;
+        currentPiece.x = Math.floor(GRID_WIDTH / 2) - 1;
+        currentPiece.y = 1;
+        nextPiece = createPiece();
+        if (hitsDangerLine()) gameOver();
+      }
+
+      function hitsDangerLine() {
+        for (let y = 0; y <= DANGER_LINE; y += 1) {
+          for (let x = 0; x < GRID_WIDTH; x += 1) {
+            if (grid[y][x] !== 0) return true;
+          }
+        }
+        return false;
+      }
+
+      function gameOver() {
+        running = false;
+        playEffect("gameover");
+        overlayText.textContent = "Game over. Tap Play to start a new run.";
+        overlay.classList.add("show");
+        saveState();
+      }
+
+      // --- Rendering ---
+      function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const boardPadding = Math.max(8, Math.floor(cellSize * 1.6));
+        const boardX = offsetX - boardPadding;
+        const boardY = offsetY - boardPadding;
+        const boardW = GRID_WIDTH * cellSize + boardPadding * 2;
+        const boardH = GRID_HEIGHT * cellSize + boardPadding * 2;
+
+        const woodGradient = ctx.createLinearGradient(boardX, boardY, boardX + boardW, boardY + boardH);
+        woodGradient.addColorStop(0, "#8f5a2f");
+        woodGradient.addColorStop(0.5, "#a06a3a");
+        woodGradient.addColorStop(1, "#7a4825");
+        ctx.fillStyle = woodGradient;
+        ctx.fillRect(boardX, boardY, boardW, boardH);
+        ctx.strokeStyle = "rgba(255, 214, 140, 0.35)";
+        ctx.lineWidth = Math.max(2, Math.floor(cellSize * 0.25));
+        ctx.strokeRect(boardX, boardY, boardW, boardH);
+
+        ctx.fillStyle = "rgba(35, 16, 10, 0.95)";
+        ctx.fillRect(offsetX, offsetY, GRID_WIDTH * cellSize, GRID_HEIGHT * cellSize);
+
+        ctx.strokeStyle = "rgba(255, 80, 80, 0.8)";
+        ctx.setLineDash([6, 6]);
+        ctx.strokeRect(
+          offsetX,
+          offsetY + DANGER_LINE * cellSize,
+          GRID_WIDTH * cellSize,
+          1
+        );
+        ctx.setLineDash([]);
+
+        for (let y = 0; y < GRID_HEIGHT; y += 1) {
+          for (let x = 0; x < GRID_WIDTH; x += 1) {
+            const value = grid[y][x];
+            if (value === 0) continue;
+            drawCell(x, y, SAND_COLORS[value - 1].value);
+          }
+        }
+
+        if (currentPiece) {
+          const shape = currentPiece.shape;
+          shape.forEach((row, y) => {
+            row.forEach((value, x) => {
+              if (!value) return;
+              drawCell(currentPiece.x + x, currentPiece.y + y, currentPiece.color.value, 0.9);
+            });
+          });
+        }
+
+        drawPreview();
+      }
+
+      function drawCell(x, y, color, alpha = 1) {
+        ctx.fillStyle = color;
+        ctx.globalAlpha = alpha;
+        ctx.fillRect(
+          offsetX + x * cellSize,
+          offsetY + y * cellSize,
+          cellSize,
+          cellSize
+        );
+        ctx.globalAlpha = 1;
+      }
+
+      function drawPreview() {
+        previewCtx.clearRect(0, 0, previewCanvas.width, previewCanvas.height);
+        if (!nextPiece) return;
+        const shape = nextPiece.shape;
+        const size = previewCanvas.width / 4;
+        previewCtx.fillStyle = nextPiece.color.value;
+        shape.forEach((row, y) => {
+          row.forEach((value, x) => {
+            if (value) {
+              previewCtx.fillRect(x * size, y * size, size, size);
+            }
+          });
+        });
+      }
+
+      // --- Input ---
+      function onPointerDown(event) {
+        if (!running || overlay.classList.contains("show")) return;
+        const rect = canvas.getBoundingClientRect();
+        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+        dragOffset = clientX - rect.left - offsetX - currentPiece.x * cellSize;
+      }
+
+      function onPointerMove(event) {
+        if (!running || overlay.classList.contains("show")) return;
+        if (!currentPiece) return;
+        const rect = canvas.getBoundingClientRect();
+        const clientX = event.touches ? event.touches[0].clientX : event.clientX;
+        const targetX = Math.floor((clientX - rect.left - offsetX - dragOffset) / cellSize);
+        const width = currentPiece.shape.length;
+        const clamped = Math.max(0, Math.min(GRID_WIDTH - width, targetX));
+        const nextX = clamped;
+        const originalX = currentPiece.x;
+        currentPiece.x = nextX;
+        if (!canPlace(currentPiece)) currentPiece.x = originalX;
+      }
+
+      function onPointerUp() {
+        if (!running || overlay.classList.contains("show")) return;
+        placePiece();
+      }
+
+      function rotatePiece() {
+        if (!currentPiece || overlay.classList.contains("show")) return;
+        const rotated = rotateMatrix(currentPiece.shape);
+        const original = currentPiece.shape;
+        currentPiece.shape = rotated;
+        if (!canPlace(currentPiece)) {
+          currentPiece.shape = original;
+          return;
+        }
+        playEffect("rotate");
+      }
+
+      // --- UI ---
+      function updateUI() {
+        scoreLabel.textContent = String(score);
+        highScoreLabel.textContent = String(highScore);
+        audioLabel.textContent = audioEnabled ? "On" : "Off";
+        startBtn.textContent = running ? "Pause" : "Start";
+      }
+
+      function showOverlay(message, buttonText) {
+        overlayText.textContent = message;
+        overlayBtn.textContent = buttonText || "Play";
+        overlay.classList.add("show");
+      }
+
+      function hideOverlay() {
+        overlay.classList.remove("show");
+      }
+
+      // --- Main loop ---
+      function tick(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        const delta = timestamp - lastTime;
+        if (delta > 16) {
+          lastTime = timestamp;
+          render();
+          updateUI();
+        }
+        requestAnimationFrame(tick);
+      }
+
+      function resize() {
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = window.innerWidth * dpr;
+        canvas.height = window.innerHeight * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        cellSize = Math.floor(
+          Math.min(window.innerWidth / GRID_WIDTH, window.innerHeight / GRID_HEIGHT)
+        );
+        offsetX = Math.floor((window.innerWidth - GRID_WIDTH * cellSize) / 2);
+        offsetY = Math.floor((window.innerHeight - GRID_HEIGHT * cellSize) / 2);
+      }
+
+      // --- Event wiring ---
+      canvas.addEventListener("touchstart", onPointerDown, { passive: true });
+      canvas.addEventListener("touchmove", onPointerMove, { passive: true });
+      canvas.addEventListener("touchend", onPointerUp, { passive: true });
+      canvas.addEventListener("mousedown", onPointerDown);
+      canvas.addEventListener("mousemove", onPointerMove);
+      canvas.addEventListener("mouseup", onPointerUp);
+
+      rotateBtn.addEventListener("click", () => {
+        rotatePiece();
+        saveState();
+      });
+
+      startBtn.addEventListener("click", () => {
+        playEffect("click");
+        if (running) {
+          running = false;
+          showOverlay("Paused. Tap Play to resume.", "Resume");
+        } else {
+          hideOverlay();
+          running = true;
+          ensureAudio();
+        }
+      });
+
+      overlayBtn.addEventListener("click", () => {
+        playEffect("click");
+        hideOverlay();
+        running = true;
+        ensureAudio();
+      });
+
+      resetBtn.addEventListener("click", () => {
+        playEffect("click");
+        resetRun();
+        running = false;
+        showOverlay("Run reset. Tap Play to start.", "Play");
+      });
+
+      fullResetBtn.addEventListener("click", () => {
+        playEffect("click");
+        fullReset();
+        running = false;
+        showOverlay("Everything reset. Tap Play to start.", "Play");
+      });
+
+      audioBtn.addEventListener("click", () => {
+        audioEnabled = !audioEnabled;
+        if (!audioEnabled && backgroundHandle) {
+          clearInterval(backgroundHandle);
+          backgroundHandle = null;
+        }
+        if (audioEnabled) ensureAudio();
+        saveState();
+      });
+
+      window.addEventListener("resize", resize);
+
+      // --- Boot ---
+      resize();
+      const restored = loadState();
+      if (!restored) {
+        resetRun();
+      }
+      updateUI();
+      showOverlay(
+        restored
+          ? "Welcome back! Drag and release to place blocks."
+          : "Drag the block left/right and release to place. Clear full same-color diagonals."
+      );
+      requestAnimationFrame(tick);
+    </script>
+  </body>
+</html>
