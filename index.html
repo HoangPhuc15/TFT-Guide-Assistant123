@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-    <title>Sand Crush Drop</title>
+    <title>Sand Crush V-Slope</title>
     <style>
       :root {
         color-scheme: dark;
-        --bg: #081226;
-        --panel: rgba(17, 26, 48, 0.9);
+        --bg: #071226;
+        --panel: rgba(16, 26, 49, 0.92);
         --text: #f4f7ff;
         --muted: #9aa6c6;
         --accent: #6cf6ff;
@@ -27,7 +27,7 @@
         margin: 0;
         padding: 0;
         height: 100%;
-        background: radial-gradient(circle at top, #10204b 0%, #081226 70%);
+        background: radial-gradient(circle at top, #11234f 0%, #071226 70%);
         font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
         color: var(--text);
       }
@@ -161,7 +161,7 @@
     </style>
   </head>
   <body>
-    <canvas id="game" aria-label="Sand Crush Drop game canvas"></canvas>
+    <canvas id="game" aria-label="Sand Crush V-Slope canvas"></canvas>
 
     <div class="ui">
       <div class="panel">
@@ -193,10 +193,10 @@
 
     <div id="overlay">
       <div class="card">
-        <h1>Sand Crush Drop</h1>
+        <h1>Sand Crush V</h1>
         <p id="overlayText">
-          Drag the block left/right, release to drop. A row clears only when it is full and all sand matches in
-          color. Keep sand below the danger line.
+          Drag the block left/right and release to place. Pieces instantly disintegrate into sand and relax along
+          the V-shaped slopes. Clear a full diagonal layer of the same color.
         </p>
         <button id="overlayBtn">Play</button>
       </div>
@@ -206,7 +206,10 @@
       // --- Game constants ---
       const GRID_WIDTH = 80;
       const GRID_HEIGHT = 140;
-      const DANGER_LINE = 10;
+      const DANGER_LINE = 12;
+      const CENTER_X = Math.floor(GRID_WIDTH / 2);
+      const MAX_LAYER = GRID_HEIGHT + CENTER_X;
+
       const SAND_COLORS = [
         { id: 1, value: "#ff6b6b" },
         { id: 2, value: "#6cf6ff" },
@@ -262,12 +265,12 @@
       let grid = createGrid();
       let currentPiece = null;
       let nextPiece = null;
-      let isDropping = false;
       let dragOffset = 0;
       let audioEnabled = true;
       let audioContext = null;
       let backgroundHandle = null;
       let lastTime = 0;
+      let relaxTimer = 0;
 
       // --- Utilities ---
       function createGrid() {
@@ -300,7 +303,7 @@
           shape: shape.map((row) => row.slice()),
           color,
           x: Math.floor(GRID_WIDTH / 2) - 1,
-          y: 2,
+          y: 1,
         };
       }
 
@@ -333,20 +336,19 @@
 
       function saveState() {
         const state = {
-          version: 2,
+          version: 3,
           score,
           highScore,
           grid: packGrid(grid),
           currentPiece,
           nextPiece,
-          isDropping,
           audioEnabled,
         };
-        localStorage.setItem("sand-crush-drop", JSON.stringify(state));
+        localStorage.setItem("sand-crush-v", JSON.stringify(state));
       }
 
       function loadState() {
-        const stored = localStorage.getItem("sand-crush-drop");
+        const stored = localStorage.getItem("sand-crush-v");
         if (!stored) return false;
         let data;
         try {
@@ -360,7 +362,6 @@
         grid = data.grid ? unpackGrid(data.grid) : createGrid();
         currentPiece = data.currentPiece || createPiece();
         nextPiece = data.nextPiece || createPiece();
-        isDropping = !!data.isDropping;
         return true;
       }
 
@@ -369,12 +370,11 @@
         score = 0;
         currentPiece = createPiece();
         nextPiece = createPiece();
-        isDropping = false;
         saveState();
       }
 
       function fullReset() {
-        localStorage.removeItem("sand-crush-drop");
+        localStorage.removeItem("sand-crush-v");
         highScore = 0;
         resetRun();
       }
@@ -406,9 +406,9 @@
         ensureAudio();
         if (name === "click") playTone(520, 0.05, 0.08);
         if (name === "rotate") playTone(680, 0.05, 0.08);
-        if (name === "drop") playTone(240, 0.08, 0.1, "triangle");
-        if (name === "crumble") playTone(180, 0.15, 0.08, "sawtooth");
-        if (name === "clear") playTone(880, 0.2, 0.12);
+        if (name === "place") playTone(220, 0.06, 0.1, "triangle");
+        if (name === "crumble") playTone(160, 0.12, 0.08, "sawtooth");
+        if (name === "clear") playTone(880, 0.18, 0.12);
         if (name === "gameover") playTone(140, 0.4, 0.12);
       }
 
@@ -417,82 +417,138 @@
         let step = 0;
         backgroundHandle = setInterval(() => {
           if (!audioEnabled) return;
-          playTone(notes[step % notes.length], 0.15, 0.04);
+          playTone(notes[step % notes.length], 0.14, 0.035);
           step += 1;
         }, 700);
       }
 
       // --- Core gameplay ---
-      function canMove(piece, dx, dy) {
+      function canPlace(piece) {
         const shape = piece.shape;
         for (let y = 0; y < shape.length; y += 1) {
           for (let x = 0; x < shape[y].length; x += 1) {
             if (!shape[y][x]) continue;
-            const nx = piece.x + x + dx;
-            const ny = piece.y + y + dy;
-            if (!inBounds(nx, ny)) return false;
-            if (grid[ny][nx] !== 0) return false;
+            const gx = piece.x + x;
+            const gy = piece.y + y;
+            if (!inBounds(gx, gy)) return false;
+            if (grid[gy][gx] !== 0) return false;
           }
         }
         return true;
       }
 
-      function mergePiece() {
+      function placePiece() {
+        if (!currentPiece) return;
+        if (!canPlace(currentPiece)) {
+          gameOver();
+          return;
+        }
         const shape = currentPiece.shape;
         shape.forEach((row, y) => {
           row.forEach((value, x) => {
-            if (value) {
-              const gx = currentPiece.x + x;
-              const gy = currentPiece.y + y;
-              if (inBounds(gx, gy)) grid[gy][gx] = currentPiece.color.id;
-            }
+            if (!value) return;
+            const gx = currentPiece.x + x;
+            const gy = currentPiece.y + y;
+            if (inBounds(gx, gy)) grid[gy][gx] = currentPiece.color.id;
           });
         });
-        playEffect("crumble");
-        score += 4;
+        playEffect("place");
+        disintegrateAndRelax();
+        score += 6;
         highScore = Math.max(highScore, score);
-        clearRows();
+        clearDiagonalLayers();
         spawnNewPiece();
+        saveState();
       }
 
-      function clearRows() {
-        let cleared = 0;
-        for (let y = GRID_HEIGHT - 1; y >= 0; y -= 1) {
-          const row = grid[y];
-          const first = row[0];
-          if (first === 0) continue;
-          let filled = true;
+      // --- Deterministic slope relaxation ---
+      function slopeDirection(x) {
+        return x < CENTER_X ? -1 : 1;
+      }
+
+      function layerIndex(x, y) {
+        return y + Math.abs(x - CENTER_X);
+      }
+
+      function relaxSand() {
+        let moved = false;
+        for (let y = GRID_HEIGHT - 2; y >= 0; y -= 1) {
           for (let x = 0; x < GRID_WIDTH; x += 1) {
-            if (row[x] !== first) {
-              filled = false;
+            const sand = grid[y][x];
+            if (sand === 0) continue;
+            const dir = slopeDirection(x);
+            const nx = x + dir;
+            const ny = y + 1;
+            if (!inBounds(nx, ny)) continue;
+            if (grid[ny][nx] === 0) {
+              grid[ny][nx] = sand;
+              grid[y][x] = 0;
+              moved = true;
+            }
+          }
+        }
+        return moved;
+      }
+
+      function disintegrateAndRelax() {
+        playEffect("crumble");
+        for (let i = 0; i < GRID_HEIGHT; i += 1) {
+          if (!relaxSand()) break;
+        }
+      }
+
+      // --- Clear diagonal layers ---
+      function clearDiagonalLayers() {
+        let cleared = 0;
+        for (let layer = 0; layer <= MAX_LAYER; layer += 1) {
+          let color = 0;
+          let full = true;
+          for (let x = 0; x < GRID_WIDTH; x += 1) {
+            const y = layer - Math.abs(x - CENTER_X);
+            if (y < 0 || y >= GRID_HEIGHT) {
+              full = false;
+              break;
+            }
+            const cell = grid[y][x];
+            if (cell === 0) {
+              full = false;
+              break;
+            }
+            if (color === 0) color = cell;
+            if (cell !== color) {
+              full = false;
               break;
             }
           }
-          if (filled) {
-            grid.splice(y, 1);
-            grid.unshift(new Array(GRID_WIDTH).fill(0));
+          if (full && color !== 0) {
+            for (let x = 0; x < GRID_WIDTH; x += 1) {
+              const y = layer - Math.abs(x - CENTER_X);
+              if (y < 0 || y >= GRID_HEIGHT) continue;
+              grid[y][x] = 0;
+            }
             cleared += 1;
-            y += 1;
           }
         }
         if (cleared > 0) {
-          score += cleared * 50;
+          score += cleared * 80;
           highScore = Math.max(highScore, score);
           playEffect("clear");
+          for (let i = 0; i < GRID_HEIGHT; i += 1) {
+            if (!relaxSand()) break;
+          }
         }
       }
 
       function spawnNewPiece() {
         currentPiece = nextPiece;
         currentPiece.x = Math.floor(GRID_WIDTH / 2) - 1;
-        currentPiece.y = 2;
+        currentPiece.y = 1;
         nextPiece = createPiece();
-        isDropping = false;
         if (hitsDangerLine()) gameOver();
       }
 
       function hitsDangerLine() {
-        for (let y = 0; y < DANGER_LINE; y += 1) {
+        for (let y = 0; y <= DANGER_LINE; y += 1) {
           for (let x = 0; x < GRID_WIDTH; x += 1) {
             if (grid[y][x] !== 0) return true;
           }
@@ -508,42 +564,12 @@
         saveState();
       }
 
-      function updateSand() {
-        for (let y = GRID_HEIGHT - 2; y >= 0; y -= 1) {
-          for (let x = 0; x < GRID_WIDTH; x += 1) {
-            if (grid[y][x] === 0) continue;
-            const sand = grid[y][x];
-            if (grid[y + 1][x] === 0) {
-              grid[y + 1][x] = sand;
-              grid[y][x] = 0;
-              continue;
-            }
-            const dir = Math.random() < 0.5 ? -1 : 1;
-            const nx = x + dir;
-            if (nx >= 0 && nx < GRID_WIDTH && grid[y + 1][nx] === 0) {
-              grid[y + 1][nx] = sand;
-              grid[y][x] = 0;
-            }
-          }
-        }
-      }
-
-      function dropStep() {
-        if (!isDropping) return;
-        if (canMove(currentPiece, 0, 1)) {
-          currentPiece.y += 1;
-        } else {
-          mergePiece();
-        }
-      }
-
       // --- Rendering ---
       function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = "rgba(9, 16, 33, 0.9)";
         ctx.fillRect(offsetX, offsetY, GRID_WIDTH * cellSize, GRID_HEIGHT * cellSize);
 
-        // Danger line
         ctx.strokeStyle = "rgba(255, 107, 107, 0.6)";
         ctx.setLineDash([6, 6]);
         ctx.strokeRect(
@@ -612,22 +638,21 @@
 
       function onPointerMove(event) {
         if (!running || overlay.classList.contains("show")) return;
-        if (!currentPiece || isDropping) return;
+        if (!currentPiece) return;
         const rect = canvas.getBoundingClientRect();
         const clientX = event.touches ? event.touches[0].clientX : event.clientX;
         const targetX = Math.floor((clientX - rect.left - offsetX - dragOffset) / cellSize);
-        const clamped = Math.max(0, Math.min(GRID_WIDTH - currentPiece.shape.length, targetX));
-        if (canMove(currentPiece, clamped - currentPiece.x, 0)) {
-          currentPiece.x = clamped;
-        }
+        const width = currentPiece.shape.length;
+        const clamped = Math.max(0, Math.min(GRID_WIDTH - width, targetX));
+        const nextX = clamped;
+        const originalX = currentPiece.x;
+        currentPiece.x = nextX;
+        if (!canPlace(currentPiece)) currentPiece.x = originalX;
       }
 
       function onPointerUp() {
         if (!running || overlay.classList.contains("show")) return;
-        if (currentPiece && !isDropping) {
-          isDropping = true;
-          playEffect("drop");
-        }
+        placePiece();
       }
 
       function rotatePiece() {
@@ -635,7 +660,7 @@
         const rotated = rotateMatrix(currentPiece.shape);
         const original = currentPiece.shape;
         currentPiece.shape = rotated;
-        if (!canMove(currentPiece, 0, 0)) {
+        if (!canPlace(currentPiece)) {
           currentPiece.shape = original;
           return;
         }
@@ -666,11 +691,11 @@
         const delta = timestamp - lastTime;
         if (delta > 16) {
           lastTime = timestamp;
-          if (running) {
-            dropStep();
-            updateSand();
+          relaxTimer += delta;
+          if (running && relaxTimer > 80) {
+            relaxSand();
+            relaxTimer = 0;
             if (hitsDangerLine()) gameOver();
-            saveState();
           }
           render();
           updateUI();
@@ -736,16 +761,6 @@
         showOverlay("Everything reset. Tap Play to start.", "Play");
       });
 
-      audioLabel.addEventListener("click", () => {
-        audioEnabled = !audioEnabled;
-        if (!audioEnabled && backgroundHandle) {
-          clearInterval(backgroundHandle);
-          backgroundHandle = null;
-        }
-        if (audioEnabled) ensureAudio();
-        saveState();
-      });
-
       audioBtn.addEventListener("click", () => {
         audioEnabled = !audioEnabled;
         if (!audioEnabled && backgroundHandle) {
@@ -767,8 +782,8 @@
       updateUI();
       showOverlay(
         restored
-          ? "Welcome back! Drag the block and release to drop."
-          : "Drag the block left/right then release to drop. Clear single-color rows to score."
+          ? "Welcome back! Drag and release to place blocks."
+          : "Drag the block left/right and release to place. Clear full same-color diagonals."
       );
       requestAnimationFrame(tick);
     </script>
