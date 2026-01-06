@@ -7,12 +7,12 @@
     <style>
       :root {
         color-scheme: dark;
-        --bg: #071226;
-        --panel: rgba(16, 26, 49, 0.92);
-        --text: #f4f7ff;
-        --muted: #9aa6c6;
-        --accent: #6cf6ff;
-        --glow: 0 0 22px rgba(108, 246, 255, 0.2);
+        --bg: #3b1f0e;
+        --panel: rgba(86, 52, 26, 0.92);
+        --text: #fff5e1;
+        --muted: #e7caa2;
+        --accent: #ffd47c;
+        --glow: 0 0 20px rgba(255, 212, 124, 0.25);
       }
 
       * {
@@ -27,7 +27,7 @@
         margin: 0;
         padding: 0;
         height: 100%;
-        background: radial-gradient(circle at top, #11234f 0%, #071226 70%);
+        background: radial-gradient(circle at top, #7a4a2a 0%, #3b1f0e 65%);
         font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
         color: var(--text);
       }
@@ -51,7 +51,7 @@
       }
 
       .panel {
-        background: var(--panel);
+        background: linear-gradient(135deg, rgba(88, 52, 26, 0.95), rgba(52, 30, 16, 0.95));
         border-radius: 14px;
         padding: 10px 12px;
         display: flex;
@@ -60,6 +60,7 @@
         gap: 12px;
         box-shadow: 0 16px 30px rgba(0, 0, 0, 0.35);
         pointer-events: auto;
+        border: 1px solid rgba(255, 212, 124, 0.2);
       }
 
       .stat {
@@ -84,19 +85,19 @@
         border-radius: 12px;
         padding: 10px 8px;
         font-weight: 600;
-        background: linear-gradient(135deg, #58d6ff, #7ef6c8);
-        color: #0a1020;
+        background: linear-gradient(135deg, #f2c46d, #ffdf9a);
+        color: #3b1f0e;
         box-shadow: var(--glow);
         font-size: 13px;
       }
 
       button.secondary {
-        background: linear-gradient(135deg, #303d68, #3b4f87);
-        color: var(--text);
+        background: linear-gradient(135deg, #6b3e1f, #865127);
+        color: #fff1d6;
       }
 
       button.danger {
-        background: linear-gradient(135deg, #ff6b6b, #ffa56b);
+        background: linear-gradient(135deg, #f05a4f, #ff8e6b);
       }
 
       #overlay {
@@ -118,7 +119,7 @@
       }
 
       #overlay .card {
-        background: rgba(15, 24, 44, 0.95);
+        background: rgba(62, 35, 18, 0.95);
         padding: 24px;
         border-radius: 18px;
         max-width: 320px;
@@ -141,7 +142,7 @@
         width: 48px;
         height: 48px;
         border-radius: 12px;
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(255, 255, 255, 0.08);
         display: grid;
         place-items: center;
         box-shadow: inset 0 0 16px rgba(255, 255, 255, 0.08);
@@ -566,10 +567,26 @@
       // --- Rendering ---
       function render() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = "rgba(9, 16, 33, 0.9)";
+        const boardPadding = Math.max(8, Math.floor(cellSize * 1.6));
+        const boardX = offsetX - boardPadding;
+        const boardY = offsetY - boardPadding;
+        const boardW = GRID_WIDTH * cellSize + boardPadding * 2;
+        const boardH = GRID_HEIGHT * cellSize + boardPadding * 2;
+
+        const woodGradient = ctx.createLinearGradient(boardX, boardY, boardX + boardW, boardY + boardH);
+        woodGradient.addColorStop(0, "#8f5a2f");
+        woodGradient.addColorStop(0.5, "#a06a3a");
+        woodGradient.addColorStop(1, "#7a4825");
+        ctx.fillStyle = woodGradient;
+        ctx.fillRect(boardX, boardY, boardW, boardH);
+        ctx.strokeStyle = "rgba(255, 214, 140, 0.35)";
+        ctx.lineWidth = Math.max(2, Math.floor(cellSize * 0.25));
+        ctx.strokeRect(boardX, boardY, boardW, boardH);
+
+        ctx.fillStyle = "rgba(35, 16, 10, 0.95)";
         ctx.fillRect(offsetX, offsetY, GRID_WIDTH * cellSize, GRID_HEIGHT * cellSize);
 
-        ctx.strokeStyle = "rgba(255, 107, 107, 0.6)";
+        ctx.strokeStyle = "rgba(255, 80, 80, 0.8)";
         ctx.setLineDash([6, 6]);
         ctx.strokeRect(
           offsetX,
